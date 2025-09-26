@@ -1,2 +1,3 @@
-# canfar-library
-Science Containers for the CANFAR Science Platform (NG)
+# CANFAR Official Images
+
+Containers for the CANFAR Science Platform (NexGen 🚀)
