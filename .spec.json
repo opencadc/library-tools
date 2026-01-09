@@ -1,0 +1,304 @@
+{
+  "$defs": {
+    "Architecture": {
+      "description": "Container Architectures.",
+      "enum": [
+        "amd64",
+        "arm32v5",
+        "arm32v6",
+        "arm32v7",
+        "arm64v8",
+        "windows-amd64"
+      ],
+      "title": "Architecture",
+      "type": "string"
+    },
+    "Build": {
+      "additionalProperties": false,
+      "description": "Build information.",
+      "properties": {
+        "path": {
+          "default": ".",
+          "description": "Path to the directory containing the Dockerfile; defaults to the root of the repository.",
+          "title": "Path",
+          "type": "string"
+        },
+        "dockerfile": {
+          "default": "Dockerfile",
+          "description": "Name of the Dockerfile relative to the path.",
+          "examples": [
+            "Dockerfile",
+            "Dockerfile-alternate"
+          ],
+          "title": "Dockerfile",
+          "type": "string"
+        },
+        "context": {
+          "default": ".",
+          "description": "Build context path relative to the Dockerfile.",
+          "examples": [
+            ".",
+            "../"
+          ],
+          "title": "Context",
+          "type": "string"
+        },
+        "builder": {
+          "default": "buildkit",
+          "description": "Builder backend used for this entry.",
+          "examples": [
+            "buildkit",
+            "classic",
+            "oci-import"
+          ],
+          "title": "Builder",
+          "type": "string"
+        },
+        "platforms": {
+          "default": [
+            "amd64"
+          ],
+          "description": "Set target platforms for the build.",
+          "items": {
+            "$ref": "#/$defs/Architecture"
+          },
+          "title": "Platforms",
+          "type": "array"
+        },
+        "tags": {
+          "description": "Tags produced by this build entry.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "args": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set build-time variables for the build.",
+          "title": "Args"
+        },
+        "annotations": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Add annotation to the container image.",
+          "title": "Annotations"
+        },
+        "labels": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Add metadata to the container image.",
+          "title": "Labels"
+        },
+        "target": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set the target build stage to build.",
+          "title": "Target"
+        }
+      },
+      "required": [
+        "tags"
+      ],
+      "title": "Build",
+      "type": "object"
+    },
+    "Git": {
+      "additionalProperties": false,
+      "description": "Git repository which contains build source.",
+      "properties": {
+        "repo": {
+          "description": "Git repository which contains the Dockerfile.",
+          "format": "uri",
+          "minLength": 1,
+          "title": "Repo",
+          "type": "string"
+        },
+        "fetch": {
+          "default": "refs/heads/main",
+          "description": "Reference to fetch before resolving commits (e.g., refs/heads/main).",
+          "examples": [
+            "refs/heads/main",
+            "refs/tags/v1.0.0"
+          ],
+          "title": "Fetch",
+          "type": "string"
+        },
+        "sha": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Commit SHA to checkout for builds.",
+          "title": "Sha"
+        },
+        "tag": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Tag to checkout for builds.",
+          "title": "Tag"
+        }
+      },
+      "required": [
+        "repo"
+      ],
+      "title": "Git",
+      "type": "object"
+    },
+    "Maintainer": {
+      "additionalProperties": false,
+      "description": "Build Maintainer Information.",
+      "properties": {
+        "name": {
+          "description": "Full name of the maintainer.",
+          "title": "Name",
+          "type": "string"
+        },
+        "email": {
+          "description": "Contact email, required for traceability.",
+          "title": "Email",
+          "type": "string"
+        },
+        "github": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Github handle without the leading '@'.",
+          "title": "Github"
+        },
+        "gitlab": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "GitLab handle without the leading '@'.",
+          "title": "Gitlab"
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ],
+      "title": "Maintainer",
+      "type": "object"
+    },
+    "Metadata": {
+      "description": "Metadata for the image.",
+      "properties": {
+        "identifier": {
+          "description": "Unique science identifier for the image.",
+          "title": "Identifier",
+          "type": "string"
+        },
+        "project": {
+          "description": "SRCnet Project name for the image.",
+          "title": "Project",
+          "type": "string"
+        }
+      },
+      "required": [
+        "identifier",
+        "project"
+      ],
+      "title": "Metadata",
+      "type": "object"
+    }
+  },
+  "description": "Manifest information.",
+  "properties": {
+    "version": {
+      "default": 0.1,
+      "description": "CANFAR Library manifest version.",
+      "title": "Version",
+      "type": "number"
+    },
+    "maintainers": {
+      "description": "List of maintainers responsible for the image.",
+      "items": {
+        "$ref": "#/$defs/Maintainer"
+      },
+      "title": "Maintainers",
+      "type": "array"
+    },
+    "git": {
+      "$ref": "#/$defs/Git",
+      "description": "Git repository information."
+    },
+    "build": {
+      "$ref": "#/$defs/Build",
+      "description": "Build information for the image."
+    },
+    "metadata": {
+      "$ref": "#/$defs/Metadata"
+    }
+  },
+  "required": [
+    "maintainers",
+    "git",
+    "build",
+    "metadata"
+  ],
+  "title": "Manifest",
+  "type": "object"
+}
