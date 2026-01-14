@@ -192,6 +192,7 @@ class Manifest(BaseModel):
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "https://raw.githubusercontent.com/opencadc/canfar-library/main/.spec.json",
             "title": "CANFAR Library Manifest",
+            "description": "Schema to capture ownership, build source, intent, and identity for library artifacts.",
         },
     )
 

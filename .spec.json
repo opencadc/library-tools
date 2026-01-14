@@ -316,7 +316,7 @@
   "$id": "https://raw.githubusercontent.com/opencadc/canfar-library/main/.spec.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Manifest information.",
+  "description": "Single, reviewable schema to capture ownership, build source, build intent, and downstream identity for library artifacts.",
   "properties": {
     "name": {
       "description": "Name of the image.",
