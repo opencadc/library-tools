@@ -3,7 +3,6 @@ description: Request a new image be added to the CANFAR Container Library
 title: "[Image Request]: <image-name>"
 labels:
   - "request: new image"
-  - "type: request"
   - "area: images"
 body:
   - type: markdown
@@ -16,16 +15,16 @@ body:
   - type: input
     id: project_name
     attributes:
-      label: Upstream project name
+      label: Upstream Project Name
       description: The software you want added to the CANFAR Container Library.
-      placeholder: Astropy
+      placeholder: e.g. Astropy
     validations:
       required: true
 
   - type: input
     id: git_repo
     attributes:
-      label: Upstream git repository URL
+      label: Upstream Git Repository URL
       description: Link to the source repository that will be built.
       placeholder: https://github.com/org/repo
     validations:
@@ -38,15 +37,14 @@ body:
       description: Include name, email, and GitHub/GitLab handle(s).
       placeholder: |
         - Name:
-          Email:
-          GitHub/GitLab:
+          GitHub / GitLab Username:
     validations:
       required: true
 
   - type: textarea
     id: relevance
     attributes:
-      label: Astronomy relevance / use cases
+      label: Astronomy Relevance / Use Cases
       description: Why is this image useful to the CANFAR community?
       placeholder: Describe the scientific workflows or tools this enables.
     validations:
@@ -73,7 +71,7 @@ body:
   - type: input
     id: manifest_pr
     attributes:
-      label: Manifest pull request link
+      label: Manifest Pull Request
       description: Link to the PR adding the manifest to this repository.
       placeholder: https://github.com/opencadc/canfar-library/pull/123
     validations:
@@ -82,17 +80,8 @@ body:
   - type: input
     id: image_name
     attributes:
-      label: Proposed image name (manifest `name`)
-      placeholder: astroml
-    validations:
-      required: true
-
-  - type: input
-    id: image_tags
-    attributes:
-      label: Proposed image tags (manifest `build.tags`)
-      description: Comma-separated tags to publish.
-      placeholder: 1.0.0, latest
+      label: Proposed Image Name (manifest `name`)
+      placeholder: astropy
     validations:
       required: true
 
