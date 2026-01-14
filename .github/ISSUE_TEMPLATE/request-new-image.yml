@@ -101,31 +101,6 @@ body:
     validations:
       required: true
 
-  - type: input
-    id: metadata_identifier
-    attributes:
-      label: Metadata identifier (manifest `metadata.identifier`)
-      description: Unique science identifier for the image.
-      placeholder: canfar-astroml
-    validations:
-      required: true
-
-  - type: input
-    id: metadata_project
-    attributes:
-      label: Metadata project (manifest `metadata.project`)
-      description: SRCnet project name for the image.
-      placeholder: canfar
-    validations:
-      required: true
-
-  - type: textarea
-    id: build_test
-    attributes:
-      label: Optional build test command (manifest `build.test`)
-      description: Command to validate the built image at runtime.
-      placeholder: uv --version
-
   - type: dropdown
     id: based_on_library
     attributes:
