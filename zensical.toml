@@ -51,6 +51,7 @@ nav = [
     { "Design" = "design.md" },
     { "Lifecycle" = "lifecycle.md" },
     { "Manifest Schema" = "schema.md" },
+    { "Technical Design" = "technical-design.md" },
     { "FAQ" = "faq.md" }
 ]
 
