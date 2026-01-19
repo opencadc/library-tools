@@ -1,3 +1,5 @@
+"""Generate Markdown documentation from the JSON Schema."""
+
 from pathlib import Path
 from library.schema import Manifest
 from jsonschema_markdown import generate  # type: ignore
@@ -9,8 +11,8 @@ def generate_schema_markdown(path: Path = Path("docs/schema.md")):
     output = generate(schema, footer=False, hide_empty_columns=True)
     header = """---\nhide: \n    - toc\n---\n\n"""
     output = header + output
-    with path.open("w") as f:
-        f.write(output)
+    with path.open("w", encoding="utf-8") as archive:
+        archive.write(output)
 
 
 if __name__ == "__main__":

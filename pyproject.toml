@@ -9,7 +9,11 @@ authors = [
 requires-python = ">=3.10"
 dependencies = [
     "pydantic>=2.12.5",
+    "typer>=0.21.1",
 ]
+
+[project.scripts]
+library = "library.cli.main:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -17,7 +21,6 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "ipython>=8.38.0",
     "jsonschema-markdown>=2025.11.0",
     "pre-commit>=4.5.1",
     "pytest>=9.0.2",

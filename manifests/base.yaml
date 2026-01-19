@@ -5,7 +5,8 @@ maintainers:
     github: shinybrar
 git:
   repo: https://github.com/opencadc/canfar-library
-  tag: v0.1.0
+  fetch: refs/heads/main
+  commit: 0fa11c1b70ce663b824ce38313c947977c328843
 build:
   path: images/base
   dockerfile: Dockerfile
@@ -24,7 +25,7 @@ build:
   annotations:
     canfar.image.type: "base"
   test:
-    cmd: uv --version
+    cmd: canfar --version
 metadata:
   identifier: canfar-base
   project: canfar
