@@ -10,10 +10,6 @@ from pydantic import AnyUrl, BaseModel, ConfigDict, Field
 Platform = Literal[
     "linux/amd64",
     "linux/arm64",
-    "linux/arm/v7",
-    "linux/arm/v6",
-    "linux/arm/v5",
-    "windows/amd64",
 ]
 
 
@@ -49,11 +45,17 @@ class Git(BaseModel):
         description="Git repository.",
         examples=["https://github.com/opencadc/canfar-library"],
     )
-    tag: str = Field(
+    fetch: str = Field(
+        "refs/heads/main",
+        title="Git Fetch Reference",
+        description="Git fetch reference.",
+        examples=["refs/heads/main", "refs/heads/develop"],
+    )
+    commit: str = Field(
         ...,
-        title="Git Tag Reference",
-        description="git tag",
-        examples=["refs/tags/v1.0.0", "v1.0.0"],
+        title="SHA Commit Hash",
+        description="SHA commit hash to build.",
+        examples=["1234567890123456789012345678901234567890"],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -102,13 +104,15 @@ class Build(BaseModel):
         None,
         title="Build Args",
         description="Build-time variables.",
-        examples=[{"FOO": "bar"}],
+        examples=[{"foo": "bar"}],
     )
     annotations: Optional[dict[str, str]] = Field(
         None,
         title="Image Annotations",
         description="Annotations for the image.",
-        examples=[{"canfar.image.type": "base"}],
+        examples=[
+            {"canfar.image.type": "runtime", "canfar.image.runtime": "python"},
+        ],
     )
     labels: Optional[dict[str, str]] = Field(
         None,
@@ -133,6 +137,13 @@ class Build(BaseModel):
         title="Test Command",
         description="Test cmd to verify the image.",
         examples=["bash -c 'echo hello world'", "bash -c ./test.sh"],
+    )
+
+    renovation: bool = Field(
+        False,
+        title="Enable Renovate",
+        description="When true, canfar library will open prs to update dockerfile dependencies.",
+        examples=[True, False],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
