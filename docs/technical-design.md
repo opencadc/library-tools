@@ -53,7 +53,7 @@ Hadolint is run against the Dockerfile referenced in the manifest to enforce bes
 
 The Hadolint configuration is defined in the [`.hadolint.yaml`](https://github.com/opencadc/canfar-library/blob/main/.hadolint.yaml) file in the root of the repository. The configuration is based on the [dockerfile best practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/) and the [hadolint documentation](https://github.com/hadolint/hadolint/wiki). These checks include but are not limited to:
 
-    - Digest-pinned base images.
+    - Digest-pinned upstream OS layer images.
     - Use of `--no-install-recommends` for apt packages.
     - Cleanup of package lists in the same layer as install.
     - Minimized layers and multi-stage build usage where applicable.
@@ -84,7 +84,7 @@ The renovate configuration is defined in the [renovate.json5](https://github.com
 
 ### Vulnerability Sources
 
-1. **Trivy** for OS packages and upstream base images, using vendor advisories.
+1. **Trivy** for OS packages and upstream OS layer images, using vendor advisories.
 2. **Grype / OSV** for language ecosystem dependencies (Python, JavaScript, Go, etc.).
 3. **CISA KEV** for prioritization of actively exploited vulnerabilities.
 
