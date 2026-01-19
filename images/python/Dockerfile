@@ -9,7 +9,7 @@ FROM ghcr.io/astral-sh/uv:0.9@sha256:4b96ee9429583983fd172c33a02ecac5242d63fb46b
 FROM python:3.10-slim AS base
 
 LABEL org.opencontainers.image.title="CANFAR Python Runtime" \
-      org.opencontainers.image.description="Python runtime for CANFAR Science Platform" \
+      org.opencontainers.image.description="Python Runtime for CANFAR Science Platform" \
       org.opencontainers.image.vendor="Canadian Astronomy Data Centre" \
       org.opencontainers.image.source="https://github.com/opencadc/canfar-library" \
       org.opencontainers.image.licenses="AGPL-3.0"
