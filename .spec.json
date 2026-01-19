@@ -60,11 +60,7 @@
           "items": {
             "enum": [
               "linux/amd64",
-              "linux/arm64",
-              "linux/arm/v7",
-              "linux/arm/v6",
-              "linux/arm/v5",
-              "windows/amd64"
+              "linux/arm64"
             ],
             "type": "string"
           },
@@ -99,7 +95,7 @@
           "description": "Build-time variables.",
           "examples": [
             {
-              "FOO": "bar"
+              "foo": "bar"
             }
           ],
           "title": "Build Args"
@@ -120,7 +116,8 @@
           "description": "Annotations for the image.",
           "examples": [
             {
-              "canfar.image.type": "base"
+              "canfar.image.runtime": "python",
+              "canfar.image.type": "runtime"
             }
           ],
           "title": "Image Annotations"
@@ -179,6 +176,16 @@
             "bash -c ./test.sh"
           ],
           "title": "Test Command"
+        },
+        "renovation": {
+          "default": false,
+          "description": "When true, canfar library will open prs to update dockerfile dependencies.",
+          "examples": [
+            true,
+            false
+          ],
+          "title": "Enable Renovate",
+          "type": "boolean"
         }
       },
       "required": [
@@ -201,19 +208,28 @@
           "title": "Repository",
           "type": "string"
         },
-        "tag": {
-          "description": "git tag",
+        "fetch": {
+          "default": "refs/heads/main",
+          "description": "Git fetch reference.",
           "examples": [
-            "refs/tags/v1.0.0",
-            "v1.0.0"
+            "refs/heads/main",
+            "refs/heads/develop"
           ],
-          "title": "Git Tag Reference",
+          "title": "Git Fetch Reference",
+          "type": "string"
+        },
+        "commit": {
+          "description": "SHA commit hash to build.",
+          "examples": [
+            "1234567890123456789012345678901234567890"
+          ],
+          "title": "SHA Commit Hash",
           "type": "string"
         }
       },
       "required": [
         "repo",
-        "tag"
+        "commit"
       ],
       "title": "Git",
       "type": "object"

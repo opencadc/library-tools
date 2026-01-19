@@ -28,7 +28,8 @@ maintainers:
     github: shinybrar
 git:
   repo: https://github.com/opencadc/canfar-library
-  tag: v0.1.0
+  fetch: refs/heads/main
+  commit: 1234567890123456789012345678901234567890
 build:
   path: images/base
   dockerfile: Dockerfile
@@ -55,7 +56,7 @@ metadata:
 ## How are library images updated?
 
 1. A change gets committed to the relevant image source Git repository, for example a new version release or a bug fix.
-2. A PR to the relevant image manifest (`manifests/XXXX.yaml`) is opened in this repository to update relevant fields, typically `git.tag`, `build.tags`, and `metadata` fields, etc.
+2. A PR to the relevant image manifest (`manifests/XXXX.yaml`) is opened in this repository to update relevant fields, typically `git.commit` (and `git.fetch` when non-default), `build.tags`, and `metadata` fields, etc.
 3. The library automation detects the change and updates the PR with a full diff of the actual `Dockerfile` changes upstream.
 4. The library automation runs a basic build test on `linux/amd64` to ensure the image builds successfully and executes `build.test` if provided.
 5. Once the PR is approved and merged, the library automation builds the image for all the platforms specified in the manifest.

@@ -28,9 +28,9 @@ The support policy balances stability with forward motion.
 - The **OS Layer** targets the most recent Ubuntu LTS, with transitions between LTS releases being explicitly managed after a 3 month grace period to allow for community testing and feedback.
 - The **Base Layers** are rebuilt monthly with refreshed pins and are published using [CalVer](https://calver.org/) tags (for example, `base:2026.1`, `base:2026.2`).
 - The **Runtime Images** are rebuilt monthly as well and always track the newest upstream patch release for their declared version (for example, `python:3.14` is the newest 3.14 at build time) on the newest base from the same cadence.
-- The **Science Images** are built on the user-provided version and published on the maintainer's cadence. Maintainers are **required** to create a Git tag for each release which is then used to update the manifest.
+- The **Science Images** are built on the user-provided version and published on the maintainer's cadence. Maintainers are **required** to pin each release to a specific commit via `git.commit`; when building from a non-default ref, the manifest must also set `git.fetch`.
 
-Tags are not invented by the library; they are declared explicitly by maintainers in manifests. This makes ownership and intent clear and ensures that automation publishes only what maintainers approve. We strongly encourage maintainers to use either [semantic versioning](https://semver.org/) or [CalVer](https://calver.org/) for image tags. As a result, `git.tag` is required in the manifest, and the commit SHA is discovered after the build system checks out that tag.
+Tags are not invented by the library; they are declared explicitly by maintainers in manifests. This makes ownership and intent clear and ensures that automation publishes only what maintainers approve. We strongly encourage maintainers to use either [semantic versioning](https://semver.org/) or [CalVer](https://calver.org/) for image tags. Image tags live under `build.tags`, while source pinning is expressed via `git.commit` (and `git.fetch` when non-default).
 
 ## Manifest-Driven Model
 
@@ -64,5 +64,5 @@ Open questions to be resolved via ADRs or targeted design addenda:
 - Reframed "build definitions" and "image recipes" as **manifests**.
 - Updated paths and sources of truth (manifests in `manifests/`, schema in `library/schema.py`).
 - Aligned architecture language with current implementation details (digest pinning, Renovate annotations, pinned packages).
-- Clarified versioning rules: monthly CalVer base tags, runtimes track upstream patches, science images follow user versions, and `git.tag` is required.
+- Clarified versioning rules: monthly CalVer base tags, runtimes track upstream patches, science images follow user versions, and source pinning uses `git.commit` (plus `git.fetch` when needed).
 - Documented current open questions for follow-on decisions.
