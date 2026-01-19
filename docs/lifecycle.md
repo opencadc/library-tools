@@ -13,7 +13,7 @@ In the request issue, you will be asked to provide the following information:
 4. Confirmation that the source is under an [OSI Approved License](https://opensource.org/licenses) and the license name (for example, MIT)
 5. Astronomy relevance and community use case
 6. Link to the manifest pull request to be reviewed and merged once the request is approved
-7. Whether the image is based on an existing library image (for example, `base` or `python`); if not, explain why and note any runtime request
+7. Whether the image is based on an existing runtime layer (for example, `python` or `r`); if not, explain why and note any new runtime request
 8. Confirmation that the manifest pull request passes automated integration tests
 
 ## Image Manifest
@@ -21,7 +21,7 @@ In the request issue, you will be asked to provide the following information:
 The image manifest is a YAML file that describes the image's source, build configuration, metadata, and other information. The manifest is written in YAML and is validated against the [Library's JSON schema](https://github.com/opencadc/canfar-library/blob/main/.spec.json) to ensure correctness.
 
 ```yaml
-name: base
+name: python
 maintainers:
   - name: Shiny Brar
     email: shiny.brar@nrc-cnrc.gc.ca
@@ -31,25 +31,26 @@ git:
   fetch: refs/heads/main
   commit: 1234567890123456789012345678901234567890
 build:
-  path: images/base
+  path: images/python
   dockerfile: Dockerfile
   context: .
   platforms:
     - linux/amd64
     - linux/arm64
   tags:
-    - latest
+    - 3.12
   labels:
-    org.opencontainers.image.title: "CANFAR Base Image"
-    org.opencontainers.image.description: "Base image for CANFAR Science Platform"
+    org.opencontainers.image.title: "CANFAR Python Runtime"
+    org.opencontainers.image.description: "Python runtime for CANFAR Science Platform"
     org.opencontainers.image.vendor: "Canadian Astronomy Data Centre"
     org.opencontainers.image.source: "https://github.com/opencadc/canfar-library"
     org.opencontainers.image.licenses: "AGPL-3.0"
   annotations:
-    canfar.image.type: "base"
-  test: uv --version
+    canfar.image.type: "runtime"
+    canfar.image.runtime: "python"
+  test: python --version
 metadata:
-  identifier: canfar-base
+  identifier: canfar-python
   project: canfar
 ```
 

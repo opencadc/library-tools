@@ -14,10 +14,9 @@ Security is treated as a baseline expectation rather than an optional add-on. So
 
 The library uses a layered container model to separate concerns and reduce churn:
 
-- **Layer 0: OS** - Upstream Ubuntu LTS with digest pinning as the OS foundation to ensure a stable base.
-- **Layer 1: Base** - A minimal, explicit toolset that downstream images can rely on. This layer is intentionally thin and reproducible. Built and published on a monthly cadence.
-- **Layer 2: Runtime** - Language runtimes (e.g., Python, R, Julia) are provided as shared baselines for science images. Built and published on a monthly cadence.
-- **Layer 3: Science** - Curated science stacks built on top of the runtime layers. Maintained by the community and published on project maintainers' cadence.
+- **Layer 0: OS** - Upstream OS distributions (Ubuntu LTS, Debian, Alpine, etc.) with digest pinning provide the operating system foundation.
+- **Layer 1: Runtime** - Language runtimes (e.g., Python, R, Julia) plus shared baseline packages for the community. Built and published on a monthly cadence.
+- **Layer 2: Science** - Curated science stacks built on top of the runtime layer. Maintained by the community and published on project maintainers' cadence.
 
 This layered model is designed to scale to new runtimes and science stacks without changing the governance model.
 
@@ -25,9 +24,8 @@ This layered model is designed to scale to new runtimes and science stacks witho
 
 The support policy balances stability with forward motion.
 
-- The **OS Layer** targets the most recent Ubuntu LTS, with transitions between LTS releases being explicitly managed after a 3 month grace period to allow for community testing and feedback.
-- The **Base Layers** are rebuilt monthly with refreshed pins and are published using [CalVer](https://calver.org/) tags (for example, `base:2026.1`, `base:2026.2`).
-- The **Runtime Images** are rebuilt monthly as well and always track the newest upstream patch release for their declared version (for example, `python:3.14` is the newest 3.14 at build time) on the newest base from the same cadence.
+- The **OS Layer** tracks the lifecycle of the chosen upstream distribution, with transitions managed after a 3 month grace period to allow for community testing and feedback.
+- The **Runtime Images** are rebuilt monthly with refreshed pins and track the newest upstream patch release for their declared version (for example, `python:3.14` is the newest 3.14 at build time).
 - The **Science Images** are built on the user-provided version and published on the maintainer's cadence. Maintainers are **required** to pin each release to a specific commit via `git.commit`; when building from a non-default ref, the manifest must also set `git.fetch`.
 
 Tags are not invented by the library; they are declared explicitly by maintainers in manifests. This makes ownership and intent clear and ensures that automation publishes only what maintainers approve. We strongly encourage maintainers to use either [semantic versioning](https://semver.org/) or [CalVer](https://calver.org/) for image tags. Image tags live under `build.tags`, while source pinning is expressed via `git.commit` (and `git.fetch` when non-default).
@@ -40,7 +38,7 @@ Manifests are the unit of review and the trigger for automation. They allow cont
 
 ## Security, Reproducibility, and Supply Chain
 
-The library enforces reproducibility through pinned sources and explicit dependency tracking through continuous integration automation. For example, the current base image implementation uses digest-pinned upstream images and Renovate annotations to make changes auditable over time.
+The library enforces reproducibility through pinned sources and explicit dependency tracking through continuous integration automation. For example, the current runtime image implementation uses digest-pinned upstream OS layers and Renovate annotations to make changes auditable over time.
 
 Provenance and metadata are considered first-class outputs. Builds automatically produce attestations, cosign signatures, software bill of materials (SBOM), and metadata suitable for downstream discovery and verification.
 
@@ -48,7 +46,7 @@ Provenance and metadata are considered first-class outputs. Builds automatically
 
 Automation is manifest-driven: schema validation, build/test, and publishing are triggered by manifest updates. Multi-architecture builds are a baseline expectation, with support expanding as needed.
 
-Promotion is treated as an explicit lifecycle step, for example promoting from `library/base:2026.1` to `library/base:2026.2`. The architecture requires promotion to be deterministic and auditable, with the details of replication, rollback, and credential management captured in follow-on decisions.
+Promotion is treated as an explicit lifecycle step, for example promoting from `library/python:2026.1` to `library/python:2026.2`. The architecture requires promotion to be deterministic and auditable, with the details of replication, rollback, and credential management captured in follow-on decisions.
 
 ## Governance, Lifecycle, and Open Questions
 
@@ -64,5 +62,5 @@ Open questions to be resolved via ADRs or targeted design addenda:
 - Reframed "build definitions" and "image recipes" as **manifests**.
 - Updated paths and sources of truth (manifests in `manifests/`, schema in `library/schema.py`).
 - Aligned architecture language with current implementation details (digest pinning, Renovate annotations, pinned packages).
-- Clarified versioning rules: monthly CalVer base tags, runtimes track upstream patches, science images follow user versions, and source pinning uses `git.commit` (plus `git.fetch` when needed).
+- Clarified versioning rules: OS layer tracks upstream lifecycles, runtime tags refresh monthly and track upstream patches, science images follow user versions, and source pinning uses `git.commit` (plus `git.fetch` when needed).
 - Documented current open questions for follow-on decisions.

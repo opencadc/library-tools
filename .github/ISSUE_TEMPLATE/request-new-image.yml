@@ -104,7 +104,7 @@ body:
   - type: dropdown
     id: based_on_library
     attributes:
-      label: Is this image based on an existing CANFAR Container Library image?
+      label: Are you using a CANFAR-provided runtime layer?
       options:
         - "Yes"
         - "No"
@@ -114,9 +114,10 @@ body:
   - type: textarea
     id: base_rationale
     attributes:
-      label: If no, explain why and note any new runtime request
-      description: Include the reason a new base/runtime is needed (e.g., Julia).
-      placeholder: We need a new Julia runtime because...
+      label: If no, explain why and note any new runtime layer request
+      description: Include the reason a new runtime layer is needed (e.g., Julia).
+      placeholder: We need a new Julia runtime layer because...
+
 
   - type: textarea
     id: maintenance_plan
