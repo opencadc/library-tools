@@ -1,16 +1,24 @@
-"""Command Line Interface for CANFAR Container Library."""
+"""Command line entrypoints for the CANFAR Container Library."""
 
 from __future__ import annotations
 
-import typer
+from pathlib import Path
 
+import typer
+from pydantic import ValidationError
+
+from library import manifest
+from library.cli import hadolint
 from library.utils.console import console
 
 
 def callback(ctx: typer.Context) -> None:
-    """Main callback that handles no subcommand case."""
+    """Handle the top-level CLI callback.
+
+    Args:
+        ctx: Typer context for the current invocation.
+    """
     if ctx.invoked_subcommand is None:
-        # No subcommand was invoked, show help and exit cleanly
         console.print(ctx.get_help())
         raise typer.Exit(0)
 
@@ -31,13 +39,35 @@ cli: typer.Typer = typer.Typer(
 )
 
 
+@cli.command("validate", help="Validate a library manifest.")
+def validate_command(path: Path) -> None:
+    """Validate a manifest file against the schema.
+
+    Args:
+        path: Path to the manifest to validate.
+    """
+    data = manifest.read(path)
+    manifest.validate(data)
+    console.print("[green]✅ Manifest is valid.[/green]")
+
+
+@cli.command("hadolint", help="Lint a Dockerfile from a manifest.")
+def hadolint_command(path: Path) -> None:
+    """Run hadolint against a manifest Dockerfile.
+
+    Args:
+        path: Path to the manifest to lint.
+    """
+    exit_code = hadolint.run_hadolint(path)
+    raise typer.Exit(exit_code)
+
+
 def main() -> None:
-    """Main entry point."""
+    """Run the CLI entrypoint."""
     try:
         cli()
-    except Exception as exc:
-        console.print(f"[red]Error: {exc}[/red]")
-        raise typer.Exit(1) from exc
+    except ValidationError as exc:
+        console.print(f"[red]❌ Error: {exc}[/red]")
 
 
 if __name__ == "__main__":

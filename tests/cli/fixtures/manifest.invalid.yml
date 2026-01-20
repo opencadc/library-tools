@@ -1,0 +1,13 @@
+name: sample-image
+maintainers:
+  - name: Example Maintainer
+    email: maintainer@example.com
+git:
+  repo: https://github.com/opencadc/canfar-library
+  commit: "1234567890123456789012345678901234567890"
+build:
+  path: images/sample
+  dockerfile: Dockerfile
+metadata:
+  identifier: sample-image
+  project: sample

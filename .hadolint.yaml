@@ -1,0 +1,6 @@
+failure-threshold: warning
+override:
+  error: []
+  warning: []
+ignored: []
+trustedRegistries: []
