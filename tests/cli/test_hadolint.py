@@ -27,6 +27,7 @@ def test_library_hadolint_invokes_docker(cli_runner, monkeypatch, fixtures_dir) 
     assert result.exit_code == 0
     assert captured["verbose"] is False
     assert "--verbose" not in captured["command"]
+    assert "FROM scratch" in result.stdout
 
 
 def test_library_hadolint_accepts_dockerfile(cli_runner, monkeypatch, tmp_path) -> None:

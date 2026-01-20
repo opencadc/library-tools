@@ -36,6 +36,7 @@ def test_library_renovate_emits_updates_summary(
     assert "ghcr.io/astral-sh/uv" in result.stdout
     assert "digest" in result.stdout
     assert '"updates"' not in result.stdout
+    assert "FROM scratch" in result.stdout
 
 
 def test_library_renovate_uses_json_log_format(

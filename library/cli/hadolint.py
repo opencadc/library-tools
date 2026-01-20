@@ -43,23 +43,30 @@ def run_hadolint(
     dockerfile_contents: str
 
     if dockerfile_path is not None:
-        console.print(f"[cyan]Reading Dockerfile from {dockerfile_path}...[/cyan]")
+        console.print(f"[cyan]Reading Dockerfile: {dockerfile_path}[/cyan]")
         dockerfile_contents = dockerfile_path.read_text(encoding="utf-8")
     elif manifest_path is not None:
-        console.print(f"[cyan]Reading manifest from {manifest_path}...[/cyan]")
+        console.print(f"[cyan]Reading Manifest: {manifest_path}[/cyan]")
         data = manifest.read(manifest_path)
         manifest.validate(data)
-
         git_info = data["git"]
         build_info = data["build"]
-        console.print("[cyan]Fetching Dockerfile from git...[/cyan]")
+        repo = git_info["repo"]
+        fetch = git_info.get("fetch")
+        commit = git_info["commit"]
+        path = build_info.get("path")
+        dockerfile = build_info.get("dockerfile")
+
+        console.print(f"[cyan]Fetching Dockerfile: {repo}[/cyan]")
         dockerfile_contents = fetch_dockerfile(
-            str(git_info["repo"]),
-            git_info.get("fetch", "refs/heads/main"),
-            git_info["commit"],
-            build_info.get("path", "."),
-            build_info.get("dockerfile", "Dockerfile"),
+            repo,
+            fetch,
+            commit,
+            path,
+            dockerfile,
         )
+        console.print("[cyan]Resolved Dockerfile Contents:[/cyan]")
+        console.print(f"\n{dockerfile_contents}\n")
     else:
         raise ValueError("Either manifest_path or dockerfile_path must be provided")
 

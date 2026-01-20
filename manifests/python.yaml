@@ -6,7 +6,7 @@ maintainers:
 git:
   repo: https://github.com/opencadc/canfar-library
   fetch: refs/heads/main
-  commit: 261ba5c82fb917eacc241652521faf57adf35b51
+  commit: 13424f4cf4517811750ea6a3506fe2f83dce9b14
 build:
   path: images/python
   dockerfile: Dockerfile
