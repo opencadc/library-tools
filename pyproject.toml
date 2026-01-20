@@ -48,3 +48,6 @@ verbose = 3
 quiet = false
 whitelist-regex = []
 color = true
+
+[tool.mypy]
+explicit_package_bases = true

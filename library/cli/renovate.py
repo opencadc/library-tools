@@ -1,7 +1,8 @@
-"""Hadolint CLI helpers."""
+"""Renovate CLI helpers."""
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 from pathlib import Path
@@ -12,22 +13,42 @@ from library.utils.console import console
 from library.utils.git import fetch_dockerfile
 
 
-def pull_image(image: str) -> None:
-    """Pull a Docker image with follow-along logs.
+def build_summary(output: str) -> dict[str, list[dict[str, object]]]:
+    """Build a JSON summary from renovate output.
 
     Args:
-        image: Docker image to pull.
+        output: Renovate output logs.
+
+    Returns:
+        Summary JSON data.
     """
-    console.print(f"[cyan]Pulling Docker image {image}...[/cyan]")
-    subprocess.run(["docker", "pull", image], check=False)
+    updates: list[dict[str, object]] = []
+    for line in output.splitlines():
+        line = line.strip()
+        if not line or not line.startswith("{"):
+            continue
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if "branchesInformation" in record:
+            for branch in record.get("branchesInformation", []):
+                updates.extend(branch.get("upgrades", []))
+            continue
+        if "updates" in record:
+            updates.extend(record.get("updates", []))
+            continue
+        if "depName" in record:
+            updates.append(record)
+    return {"updates": updates}
 
 
-def run_hadolint(
+def run_renovate(
     manifest_path: Path | None,
     dockerfile_path: Path | None,
     verbose: bool,
-) -> int:
-    """Run hadolint against a manifest or a local Dockerfile.
+) -> dict[str, list[dict[str, object]]]:
+    """Run renovate against a manifest or Dockerfile.
 
     Args:
         manifest_path: Path to the manifest file.
@@ -35,7 +56,7 @@ def run_hadolint(
         verbose: Whether to emit verbose output.
 
     Returns:
-        The hadolint exit code.
+        Summary JSON data.
 
     Raises:
         ValueError: If neither a manifest nor Dockerfile path is provided.
@@ -66,30 +87,35 @@ def run_hadolint(
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         dockerfile_path = temp_path / "Dockerfile"
-        config_source = Path.cwd() / ".hadolint.yaml"
-        config_path = temp_path / ".hadolint.yaml"
-        console.print("[cyan]Preparing hadolint workspace...[/cyan]")
+        config_source = Path.cwd() / "renovate.json5"
+        config_path = temp_path / "renovate.json5"
+        console.print("[cyan]Preparing renovate workspace...[/cyan]")
         dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
         config_path.write_text(
             config_source.read_text(encoding="utf-8"), encoding="utf-8"
         )
-        pull_image("hadolint/hadolint:latest")
         command = [
             "docker",
             "run",
             "--rm",
             "-i",
+            "-e",
+            "LOG_FORMAT=json",
+            "-e",
+            "LOG_LEVEL=debug",
             "-v",
-            f"{temp_path}:/work",
+            f"{temp_path}:/repo",
             "-w",
-            "/work",
-            "hadolint/hadolint:latest",
-            "hadolint",
-            "--config",
-            "/work/.hadolint.yaml",
+            "/repo",
+            "renovate/renovate:latest",
+            "--platform=local",
+            "--require-config=ignored",
+            "--dry-run=full",
         ]
-        if verbose:
-            command.append("--verbose")
-        command.append("/work/Dockerfile")
-        console.print("[cyan]Running hadolint...[/cyan]")
-        return docker.run(command, verbose=verbose).returncode
+        console.print("[cyan]Pulling Docker image renovate/renovate:latest...[/cyan]")
+        subprocess.run(["docker", "pull", "renovate/renovate:latest"], check=False)
+        console.print("[cyan]Running renovate...[/cyan]")
+        output = (docker.run(command, verbose=verbose).stdout or "").strip()
+
+    console.print("[cyan]Generating JSON summary...[/cyan]")
+    return build_summary(output)

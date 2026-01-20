@@ -21,8 +21,11 @@ repos:
       - id: mypy
         additional_dependencies:
           - types-toml
+          - types-PyYAML
           - pydantic
           - typer
+          - pytest
+          - gitpython
         args: [--config-file=pyproject.toml]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks

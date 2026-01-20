@@ -1,3 +1,5 @@
+"""CLI test fixtures."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -12,11 +14,13 @@ FIXTURES = Path(__file__).parent / "fixtures"
 
 @pytest.fixture()
 def fixtures_dir() -> Path:
+    """Provide the CLI fixtures directory."""
     return FIXTURES
 
 
 @pytest.fixture()
 def cli_runner() -> CliRunner:
+    """Provide a Typer CLI runner instance."""
     return CliRunner()
 
 

@@ -30,7 +30,9 @@ def build_git_show_args(
     return ["git", "show", f"{commit}:{path}/{dockerfile}"]
 
 
-def fetch_dockerfile(repo: str, ref: str, commit: str, path: str, dockerfile: str) -> str:
+def fetch_dockerfile(
+    repo: str, ref: str, commit: str, path: str, dockerfile: str
+) -> str:
     """Fetch a Dockerfile from a git repository without a checkout.
 
     Args:

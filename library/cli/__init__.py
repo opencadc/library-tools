@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from library.cli import hadolint
+from library.cli import hadolint, renovate
 
-__all__ = ["hadolint"]
+__all__ = ["hadolint", "renovate"]

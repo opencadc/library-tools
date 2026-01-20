@@ -27,7 +27,7 @@ def read(path: Path) -> dict[str, Any]:
     if data is None:
         return {}
     if not isinstance(data, dict):
-        raise ValueError("Manifest must be a mapping")
+        raise ValueError("Manifest must be a dictionary.")
     return data
 
 

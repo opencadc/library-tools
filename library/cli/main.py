@@ -4,11 +4,13 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import json
+
 import typer
 from pydantic import ValidationError
 
 from library import manifest
-from library.cli import hadolint
+from library.cli import hadolint, renovate
 from library.utils.console import console
 
 
@@ -52,14 +54,69 @@ def validate_command(path: Path) -> None:
 
 
 @cli.command("hadolint", help="Lint a Dockerfile from a manifest.")
-def hadolint_command(path: Path) -> None:
-    """Run hadolint against a manifest Dockerfile.
+def hadolint_command(
+    path: Path | None = typer.Argument(None, help="Path to a manifest file."),
+    dockerfile: Path | None = typer.Option(
+        None, "--dockerfile", help="Path to a Dockerfile."
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output."
+    ),
+) -> None:
+    """Run hadolint against a manifest or Dockerfile.
 
     Args:
         path: Path to the manifest to lint.
+        dockerfile: Path to a Dockerfile.
+        verbose: Whether to emit verbose output.
     """
-    exit_code = hadolint.run_hadolint(path)
+    exit_code = hadolint.run_hadolint(path, dockerfile, verbose)
+    if exit_code == 0:
+        console.print("[green]✅ Hadolint completed successfully.[/green]")
+    else:
+        console.print(f"[red]❌ Hadolint failed with exit code {exit_code}.[/red]")
     raise typer.Exit(exit_code)
+
+
+@cli.command("renovate", help="Run renovate against a Dockerfile.")
+def renovate_command(
+    path: Path | None = typer.Argument(None, help="Path to a manifest file."),
+    dockerfile: Path | None = typer.Option(
+        None, "--dockerfile", help="Path to a Dockerfile."
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output."
+    ),
+    json_output: bool = typer.Option(
+        False, "--json", help="Emit raw JSON updates summary."
+    ),
+) -> None:
+    """Run renovate against a manifest or Dockerfile.
+
+    Args:
+        path: Path to the manifest to scan.
+        dockerfile: Path to a Dockerfile.
+        verbose: Whether to emit verbose output.
+        json_output: Whether to emit JSON output.
+    """
+    summary = renovate.run_renovate(path, dockerfile, verbose)
+    updates = summary.get("updates", [])
+    if updates:
+        console.print("[cyan]Detected updates:[/cyan]")
+        for update in updates:
+            dep_name = update.get("depName") or update.get("packageName")
+            new_value = update.get("newValue") or update.get("newVersion")
+            new_digest = update.get("newDigest")
+            update_type = update.get("updateType") or "update"
+            if dep_name and new_value:
+                digest_suffix = f"@{new_digest}" if new_digest else ""
+                console.print(
+                    f"- {dep_name}: {new_value}{digest_suffix} ({update_type})"
+                )
+    else:
+        console.print("[yellow]No updates detected.[/yellow]")
+    if json_output:
+        console.print_json(json.dumps(summary))
 
 
 def main() -> None:
