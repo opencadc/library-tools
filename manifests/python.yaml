@@ -1,0 +1,31 @@
+name: python
+maintainers:
+  - name: Shiny Brar
+    email: shiny.brar@nrc-cnrc.gc.ca
+    github: shinybrar
+git:
+  repo: https://github.com/opencadc/canfar-library
+  fetch: refs/heads/main
+  commit: 261ba5c82fb917eacc241652521faf57adf35b51
+build:
+  path: images/python
+  dockerfile: Dockerfile
+  context: .
+  target: python-3.10
+  platforms:
+    - linux/amd64
+    - linux/arm64
+  tags:
+    - "3.10"
+  labels:
+    org.opencontainers.image.title: "CANFAR Python Runtime"
+    org.opencontainers.image.description: "Python runtime for CANFAR Science Platform"
+    org.opencontainers.image.vendor: "Canadian Astronomy Data Centre"
+    org.opencontainers.image.source: "https://github.com/opencadc/canfar-library"
+    org.opencontainers.image.licenses: "AGPL-3.0"
+  annotations:
+    canfar.image.type: "runtime"
+  test: python --version
+metadata:
+  identifier: canfar-python
+  project: canfar
