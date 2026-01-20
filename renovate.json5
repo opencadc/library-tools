@@ -1,0 +1,36 @@
+{
+  "extends": ["config:base", "group:allNonMajor"],
+  "platform": "local",
+  "onboarding": false,
+  "schedule": ["on the 1st day of the month at 03:14"],
+  "timezone": "UTC",
+  "prHourlyLimit": 5,
+  "prConcurrentLimit": 10,
+  "dependencyDashboard": false,
+  "rangeStrategy": "pin",
+  "pinDigests": true,
+  "updatePinnedDependencies": true,
+  "digest": {
+    "enabled": true
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["dockerfile"],
+      "matchDatasources": ["docker"],
+      "pinDigests": true,
+      "updatePinnedDependencies": true
+    },
+    {
+      "matchUpdateTypes": ["patch"],
+      "minimumReleaseAge": "1 day"
+    },
+    {
+      "matchUpdateTypes": ["minor"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "minimumReleaseAge": "30 days"
+    }
+  ]
+}
