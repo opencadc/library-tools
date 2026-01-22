@@ -52,6 +52,7 @@ nav = [
     { "Lifecycle" = "lifecycle.md" },
     { "Manifest Schema" = "schema.md" },
     { "Technical Design" = "technical-design.md" },
+    { "CLI" = "cli.md" },
     { "FAQ" = "faq.md" }
 ]
 

@@ -2,14 +2,32 @@
 
 As stewards of the CANFAR Container Library and maintainers of many images in the library, we understand the importance of providing a smooth and efficient experience for users. To that end, we have compiled a list of frequently asked questions and their answers to help you get the most out of the library.
 
+## Audiences
+
+!!! success "Who is this for?"
+
+    - Maintainers of software who want to provide a convenient way for users to discover their software.
+    - Follow best practices for auditable, secure, and reproducible software supply-chain.
+
+!!! failure "Who is this not for?"
+
+    - Users who want to run / prototype their software for themselves.
+
 ## What do you mean by `Library`?
 
 The CANFAR Container Library is a collection of container images that are built and published under the `library` namespace on the [CANFAR Image Registry](https://images.canfar.net). We use the term "library" to refer to this collection of images, as well as the process and tools for building and maintaining these images in this repository.
 
 When using CANFAR clients to create a new session, `library` is the default image namespace. For example, to create a new session using the `images.canfar.net/library/astroml:latest` image, you can simply run the following shorthand:
 
-```sh
+```bash
 canfar create notebook astroml
+```
+
+```python
+from canfar.sessions import AsyncSession
+
+async with AsyncSession() as session:
+    await session.create(kind="notebook", image="astroml")
 ```
 
 The clients will automatically expand the shorthand to the fully qualified image name since `images.canfar.net` is the default image registry, `library` is the default image namespace, and `latest` is the default image tag.
