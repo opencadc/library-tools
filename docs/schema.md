@@ -11,13 +11,13 @@ Schema to capture ownership, build source, intent, and identity for library arti
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Description | Examples |
-| -------- | ---- | -------- | --------------- | ----------- | -------- |
-| name | `string` | ✅ | string | Image name. | ```astroml``` |
-| maintainers | `array` | ✅ | [Maintainer](#maintainer) | Image maintainers. |  |
-| git | `object` | ✅ | [Git](#git) | Image repository. |  |
-| build | `object` | ✅ | [Build](#build) | Image build info. |  |
-| metadata | `object` | ✅ | [Metadata](#metadata) | Image metadata. |  |
+| Property | Type | Required | Possible values | Description |
+| -------- | ---- | -------- | --------------- | ----------- |
+| registry | `object` | ✅ | [Registry](#registry) | Image registry. |
+| maintainers | `array` | ✅ | [Maintainer](#maintainer) | Image maintainers. |
+| git | `object` | ✅ | [Git](#git) | Image repository. |
+| build | `object` | ✅ | [Build](#build) | Image build info. |
+| metadata | `object` | ✅ | [Metadata](#metadata) | Image metadata. |
 
 
 ---
@@ -82,7 +82,27 @@ Metadata for the image.
 
 #### Type: `object`
 
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| identifier | `string` | ✅ | string | Unique science identifier for the image. |
-| project | `string` | ✅ | string | SRCnet Project name for the image. |
+> ⚠️ Additional properties are not allowed.
+
+| Property | Type | Required | Possible values | Default | Description | Examples |
+| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| name | `string` or `null` |  | string | `null` | Stylized name for the image. | ```Python```, ```astroML```, ```NumPy``` |
+| description | `string` or `null` |  | Length: `string <= 255` | `null` | Short description of the image. | ```Python runtime for CANFAR Science Platform``` |
+| homepage | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to the homepage for the image. | ```https://canfar.net``` |
+| guide | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to the user guide for the image. | ```https://canfar.net/docs/user-guide``` |
+| categories | `array` or `null` |  | string | `null` | Categories for the image. | ```development```, ```science```, ```astronomy``` |
+| tools | `array` or `null` |  | string | `null` | Tools provided by the image. | ```python```, ```jupyter```, ```notebook``` |
+
+## Registry
+
+Details about the container registry.
+
+#### Type: `object`
+
+> ⚠️ Additional properties are not allowed.
+
+| Property | Type | Required | Possible values | Default | Description | Examples |
+| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| image | `string` | ✅ | string |  | Container image name. | ```python```, ```base``` |
+| host | `const` |  | `https://images.canfar.net` | `"https://images.canfar.net"` | Container registry hostname. | ```https://docker.io``` |
+| project | `string` |  | `library` `srcnet` `skaha` | `"library"` | Container registry namespace. | ```skaha``` |

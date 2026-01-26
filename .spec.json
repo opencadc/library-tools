@@ -283,24 +283,168 @@
       "type": "object"
     },
     "Metadata": {
+      "additionalProperties": false,
       "description": "Metadata for the image.",
       "properties": {
-        "identifier": {
-          "description": "Unique science identifier for the image.",
-          "title": "Identifier",
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Stylized name for the image.",
+          "examples": [
+            "Python",
+            "astroML",
+            "NumPy"
+          ],
+          "title": "Display Name"
+        },
+        "description": {
+          "anyOf": [
+            {
+              "maxLength": 255,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Short description of the image.",
+          "examples": [
+            "Python runtime for CANFAR Science Platform"
+          ],
+          "title": "Description"
+        },
+        "homepage": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "URL to the homepage for the image.",
+          "examples": [
+            "https://canfar.net"
+          ],
+          "title": "Homepage"
+        },
+        "guide": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "URL to the user guide for the image.",
+          "examples": [
+            "https://canfar.net/docs/user-guide"
+          ],
+          "title": "User Guide"
+        },
+        "categories": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Categories for the image.",
+          "examples": [
+            "development",
+            "science",
+            "astronomy"
+          ],
+          "title": "Categories"
+        },
+        "tools": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Tools provided by the image.",
+          "examples": [
+            "python",
+            "jupyter",
+            "notebook"
+          ],
+          "title": "Tools"
+        }
+      },
+      "title": "Metadata",
+      "type": "object"
+    },
+    "Registry": {
+      "additionalProperties": false,
+      "description": "Details about the container registry.",
+      "properties": {
+        "host": {
+          "const": "https://images.canfar.net",
+          "default": "https://images.canfar.net",
+          "description": "Container registry hostname.",
+          "examples": [
+            "https://docker.io"
+          ],
+          "title": "Hostname",
           "type": "string"
         },
         "project": {
-          "description": "SRCnet Project name for the image.",
+          "default": "library",
+          "description": "Container registry namespace.",
+          "enum": [
+            "library",
+            "srcnet",
+            "skaha"
+          ],
+          "examples": [
+            "skaha"
+          ],
           "title": "Project",
+          "type": "string"
+        },
+        "image": {
+          "description": "Container image name.",
+          "examples": [
+            "python",
+            "base"
+          ],
+          "title": "Image Name",
           "type": "string"
         }
       },
       "required": [
-        "identifier",
-        "project"
+        "image"
       ],
-      "title": "Metadata",
+      "title": "Registry",
       "type": "object"
     }
   },
@@ -309,13 +453,9 @@
   "additionalProperties": false,
   "description": "Schema to capture ownership, build source, intent, and identity for library artifacts.",
   "properties": {
-    "name": {
-      "description": "Image name.",
-      "examples": [
-        "astroml"
-      ],
-      "title": "Name",
-      "type": "string"
+    "registry": {
+      "$ref": "#/$defs/Registry",
+      "description": "Image registry."
     },
     "maintainers": {
       "description": "Image maintainers.",
@@ -341,7 +481,7 @@
     }
   },
   "required": [
-    "name",
+    "registry",
     "maintainers",
     "git",
     "build",

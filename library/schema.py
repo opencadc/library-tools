@@ -7,9 +7,17 @@ from typing import List, Optional, Literal
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field
 
 
-Platform = Literal[
+PLATFORMS = Literal[
     "linux/amd64",
     "linux/arm64",
+]
+
+HOSTNAMES = Literal["https://images.canfar.net",]
+
+PROJECTS = Literal[
+    "library",
+    "srcnet",
+    "skaha",
 ]
 
 
@@ -31,6 +39,31 @@ class Maintainer(BaseModel):
         None,
         title="GitLab Username",
         description="GitLab Username.",
+    )
+
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+
+
+class Registry(BaseModel):
+    """Details about the container registry."""
+
+    host: HOSTNAMES = Field(
+        "https://images.canfar.net",
+        title="Hostname",
+        description="Container registry hostname.",
+        examples=["https://docker.io"],
+    )
+    project: PROJECTS = Field(
+        "library",
+        title="Project",
+        description="Container registry namespace.",
+        examples=["skaha"],
+    )
+    image: str = Field(
+        ...,
+        title="Image Name",
+        description="Container image name.",
+        examples=["python", "base"],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -88,7 +121,7 @@ class Build(BaseModel):
         description="Builder backend used for this entry.",
         examples=["buildkit"],
     )
-    platforms: list[Platform] = Field(
+    platforms: list[PLATFORMS] = Field(
         default=["linux/amd64"],
         title="Target Platforms",
         description="Target platforms.",
@@ -154,14 +187,51 @@ class Metadata(BaseModel):
     Metadata for the image.
     """
 
-    identifier: str = Field(..., description="Unique science identifier for the image.")
-    project: str = Field(..., description="SRCnet Project name for the image.")
+    name: Optional[str] = Field(
+        None,
+        title="Display Name",
+        description="Stylized name for the image.",
+        examples=["Python", "astroML", "NumPy"],
+    )
+    description: Optional[str] = Field(
+        None,
+        title="Description",
+        description="Short description of the image.",
+        examples=["Python runtime for CANFAR Science Platform"],
+        max_length=255,
+    )
+    homepage: Optional[AnyUrl] = Field(
+        None,
+        title="Homepage",
+        description="URL to the homepage for the image.",
+        examples=["https://canfar.net"],
+    )
+    guide: Optional[AnyUrl] = Field(
+        None,
+        title="User Guide",
+        description="URL to the user guide for the image.",
+        examples=["https://canfar.net/docs/user-guide"],
+    )
+    categories: Optional[List[str]] = Field(
+        None,
+        title="Categories",
+        description="Categories for the image.",
+        examples=["development", "science", "astronomy"],
+    )
+    tools: Optional[List[str]] = Field(
+        None,
+        title="Tools",
+        description="Tools provided by the image.",
+        examples=["python", "jupyter", "notebook"],
+    )
+
+    model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
 
 class Manifest(BaseModel):
     """CANFAR Container Library Schema."""
 
-    name: str = Field(..., description="Image name.", examples=["astroml"])
+    registry: Registry = Field(..., title="Registry", description="Image registry.")
     maintainers: List[Maintainer] = Field(
         ...,
         title="Maintainers",

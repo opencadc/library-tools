@@ -1,12 +1,15 @@
-name: python
-maintainers:
-  - name: Shiny Brar
-    email: shiny.brar@nrc-cnrc.gc.ca
-    github: shinybrar
+registry:
+  host: https://images.canfar.net
+  project: library
+  image: python
 git:
   repo: https://github.com/opencadc/canfar-library
   fetch: refs/heads/main
   commit: 13424f4cf4517811750ea6a3506fe2f83dce9b14
+maintainers:
+  - name: Shiny Brar
+    email: shiny.brar@nrc-cnrc.gc.ca
+    github: shinybrar
 build:
   path: images/python
   dockerfile: Dockerfile
@@ -27,5 +30,13 @@ build:
     canfar.image.type: "runtime"
   test: python --version
 metadata:
-  identifier: canfar-python
-  project: canfar
+  name: "Python"
+  description: "Python runtime for CANFAR Science Platform"
+  homepage: "https://canfar.net"
+  guide: "https://canfar.net/docs/user-guide"
+  categories:
+    - "development"
+    - "science"
+    - "astronomy"
+  tools:
+    - "python"
