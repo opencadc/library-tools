@@ -12,7 +12,7 @@ LABEL org.opencontainers.image.title="CANFAR Python Runtime" \
       org.opencontainers.image.description="Python runtime for CANFAR Science Platform" \
       org.opencontainers.image.vendor="Canadian Astronomy Data Centre" \
       org.opencontainers.image.source="https://github.com/opencadc/canfar-library" \
-      org.opencontainers.image.licenses="AGPL-3.0"
+      org.opencontainers.image.licenses="AGPL-3.0-or-later"
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
@@ -26,4 +26,4 @@ ENV UV_PYTHON_INSTALL_DIR=/usr/local/share/uv/python \
     UV_TOOL_DIR=/usr/local/share/uv/tools \
     UV_TOOL_BIN_DIR=/usr/local/bin
 
-RUN uv tool install canfar==1.2.0
+RUN uv tool install --no-cache canfar==1.2.0
