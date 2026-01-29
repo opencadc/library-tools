@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import posixpath
+import urllib
+import urllib.error
+import urllib.request
 from urllib.parse import urlparse
-
-import httpx
 
 from library.config import ALLOWED_GIT_SOURCES
 
@@ -103,17 +104,17 @@ def contents(raw_url: str, timeout: float = 10.0) -> str:
         raise ValueError("Unsupported URL scheme.")
 
     try:
-        with httpx.Client(timeout=timeout) as client:
-            response = client.get(raw_url)
-    except httpx.RequestError as exc:
+        with urllib.request.urlopen(raw_url, timeout=timeout) as response:
+            status = response.getcode()
+            if status is not None and status != 200:
+                raise RuntimeError(f"Fetch failed ({status}) for {raw_url}")
+            payload = response.read()
+    except urllib.error.HTTPError as exc:
+        raise RuntimeError(f"Fetch failed ({exc.code}) for {raw_url}") from exc
+    except urllib.error.URLError as exc:
         raise RuntimeError(f"Failed to fetch URL {raw_url}: {exc}") from exc
 
-    if response.status_code != 200:
-        raise RuntimeError(f"Fetch failed ({response.status_code}) for {raw_url}")
-
     try:
-        return response.content.decode("utf-8")
+        return payload.decode("utf-8")
     except UnicodeDecodeError as exc:
-        raise RuntimeError(
-            f"Failed to decode content as UTF-8 for {raw_url}"
-        ) from exc
+        raise RuntimeError(f"Failed to decode content as UTF-8 for {raw_url}") from exc
