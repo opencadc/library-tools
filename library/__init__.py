@@ -1,5 +1,9 @@
 """CANFAR Science Platform Container Library"""
 
-from library.utils import fetch
+from pathlib import Path
 
-__all__ = ["fetch"]
+HADOLINT_CONFIG_PATH = Path(__file__).resolve().parent / ".hadolint.yaml"
+RENOVATE_CONFIG_PATH = Path(__file__).resolve().parent / "renovate.json5"
+ALLOWED_GIT_SOURCES: list[str] = ["github.com", "gitlab.com"]
+
+__all__ = ["HADOLINT_CONFIG_PATH", "RENOVATE_CONFIG_PATH", "ALLOWED_GIT_SOURCES"]

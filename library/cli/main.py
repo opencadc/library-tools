@@ -70,7 +70,7 @@ def hadolint_command(
         dockerfile: Path to a Dockerfile.
         verbose: Whether to emit verbose output.
     """
-    exit_code = hadolint.run_hadolint(path, dockerfile, verbose)
+    exit_code = hadolint.run(path, dockerfile, verbose)
     if exit_code == 0:
         console.print("[green]✅ Hadolint completed successfully.[/green]")
     else:

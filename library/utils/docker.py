@@ -8,6 +8,17 @@ import subprocess
 from library.utils.console import console
 
 
+def pull(image: str) -> None:
+    """Pull a Docker image with follow-along logs.
+
+    Args:
+        image: Docker image to pull.
+    """
+    console.print(f"[cyan]Docker: Pulling Image {image}[/cyan]")
+    subprocess.run(["docker", "pull", image], check=False)
+    console.print("[cyan]Docker: Pull Complete.[/cyan]")
+
+
 def run(
     command: Sequence[str],
     *,
@@ -22,7 +33,7 @@ def run(
     Returns:
         The completed process.
     """
-    console.print("[cyan]Starting Docker container...[/cyan]")
+    console.print("[cyan]Docker: Starting Container...[/cyan]")
     process = subprocess.run(
         list(command),
         check=False,
@@ -35,6 +46,6 @@ def run(
     if verbose and process.stdout:
         console.print(process.stdout, end="")
     console.print(
-        f"[cyan]Docker container finished with exit code {process.returncode}.[/cyan]"
+        f"[cyan]Docker: Container Finished with exit code {process.returncode}.[/cyan]"
     )
     return process

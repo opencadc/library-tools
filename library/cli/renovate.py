@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import tempfile
 from pathlib import Path
 
-from library import fetch, manifest
-from library.utils import docker
+from library import manifest, RENOVATE_CONFIG_PATH
+from library.utils import docker, fetch
 from library.utils.console import console
 
 
@@ -85,7 +84,7 @@ def run_renovate(
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         dockerfile_path = temp_path / "Dockerfile"
-        config_source = Path.cwd() / "renovate.json5"
+        config_source = RENOVATE_CONFIG_PATH
         config_path = temp_path / "renovate.json5"
         console.print("[cyan]Preparing renovate workspace...[/cyan]")
         dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
@@ -110,8 +109,7 @@ def run_renovate(
             "--require-config=ignored",
             "--dry-run=full",
         ]
-        console.print("[cyan]Pulling Docker image renovate/renovate:latest...[/cyan]")
-        subprocess.run(["docker", "pull", "renovate/renovate:latest"], check=False)
+        docker.pull("docker.io/renovate/renovate:latest")
         console.print("[cyan]Running renovate...[/cyan]")
         output = (docker.run(command, verbose=verbose).stdout or "").strip()
 

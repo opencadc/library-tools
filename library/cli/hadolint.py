@@ -3,26 +3,15 @@
 from __future__ import annotations
 
 import json
-import subprocess
 import tempfile
 from pathlib import Path
 
-from library import fetch, manifest
-from library.utils import docker
+from library import manifest, HADOLINT_CONFIG_PATH
+from library.utils import docker, fetch
 from library.utils.console import console
 
 
-def pull_image(image: str) -> None:
-    """Pull a Docker image with follow-along logs.
-
-    Args:
-        image: Docker image to pull.
-    """
-    console.print(f"[cyan]Pulling Docker image {image}...[/cyan]")
-    subprocess.run(["docker", "pull", image], check=False)
-
-
-def run_hadolint(
+def run(
     manifest_path: Path | None,
     dockerfile_path: Path | None,
     verbose: bool,
@@ -67,14 +56,15 @@ def run_hadolint(
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         dockerfile_path = temp_path / "Dockerfile"
-        config_source = Path.cwd() / ".hadolint.yaml"
+        config_source = HADOLINT_CONFIG_PATH
         config_path = temp_path / ".hadolint.yaml"
+
         console.print("[cyan]Preparing hadolint workspace...[/cyan]")
         dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
         config_path.write_text(
             config_source.read_text(encoding="utf-8"), encoding="utf-8"
         )
-        pull_image("hadolint/hadolint:latest")
+        docker.pull("docker.io/hadolint/hadolint:latest")
         command = [
             "docker",
             "run",

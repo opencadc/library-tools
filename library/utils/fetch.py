@@ -8,7 +8,7 @@ import urllib.error
 import urllib.request
 from urllib.parse import urlparse
 
-from library.config import ALLOWED_GIT_SOURCES
+from library import ALLOWED_GIT_SOURCES
 
 
 def _normalize_repo_path(path: str) -> str:

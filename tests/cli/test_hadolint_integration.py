@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from library.cli.hadolint import run_hadolint
+from library.cli.hadolint import run
 
 
 @pytest.mark.integration
@@ -17,5 +17,5 @@ def test_hadolint_chain_dockerfile(tmp_path: Path) -> None:
     """Run hadolint end-to-end using a local Dockerfile."""
     dockerfile_path = tmp_path / "Dockerfile"
     dockerfile_path.write_text("FROM alpine:3.19\n", encoding="utf-8")
-    result = run_hadolint(None, dockerfile_path, False)
+    result = run(None, dockerfile_path, False)
     assert result == 0
