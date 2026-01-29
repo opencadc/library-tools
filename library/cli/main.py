@@ -53,7 +53,7 @@ def validate_command(path: Path) -> None:
     console.print("[green]✅ Manifest is valid.[/green]")
 
 
-@cli.command("hadolint", help="Lint a Dockerfile from a manifest.")
+@cli.command("lint", help="Lint a Dockerfile from a manifest.")
 def hadolint_command(
     path: Path | None = typer.Argument(None, help="Path to a manifest file."),
     dockerfile: Path | None = typer.Option(

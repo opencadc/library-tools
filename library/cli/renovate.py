@@ -7,10 +7,9 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from library import manifest
+from library import fetch, manifest
 from library.utils import docker
 from library.utils.console import console
-from library.utils.git import fetch_dockerfile
 
 
 def build_summary(output: str) -> dict[str, list[dict[str, object]]]:
@@ -73,17 +72,11 @@ def run_renovate(
         git_info = data["git"]
         build_info = data["build"]
         repo = git_info["repo"]
-        fetch = git_info.get("fetch")
         commit = git_info["commit"]
         path = build_info.get("path")
         dockerfile = build_info.get("dockerfile")
-        dockerfile_contents = fetch_dockerfile(
-            repo,
-            fetch,
-            commit,
-            path,
-            dockerfile,
-        )
+        raw_url = fetch.url(repo, commit, path, dockerfile)
+        dockerfile_contents = fetch.contents(raw_url)
         console.print("[cyan]Resolved Dockerfile Contents:[/cyan]")
         console.print(f"\n{dockerfile_contents}\n")
     else:

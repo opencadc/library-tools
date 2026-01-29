@@ -24,7 +24,7 @@ def test_library_renovate_emits_updates_summary(
 
     monkeypatch.setattr("library.cli.renovate.docker.run", fake_run)
     monkeypatch.setattr(
-        "library.cli.renovate.fetch_dockerfile",
+        "library.cli.renovate.fetch.contents",
         lambda *_args, **_kwargs: "FROM scratch",
     )
     result = cli_runner.invoke(
