@@ -1,6 +1,26 @@
-failure-threshold: warning
+# Fail on any lint finding, including style and info.
+failure-threshold: style
+
 override:
   error: []
   warning: []
+  info: []
+  style: []
+
 ignored: []
-trustedRegistries: []
+
+trustedRegistries:
+  - images.canfar.net
+  - docker.io
+  - ghcr.io
+
+# Enforce OCI labels and validate key formats.
+label-schema:
+  org.opencontainers.image.title: text
+  org.opencontainers.image.description: text
+  org.opencontainers.image.vendor: text
+  org.opencontainers.image.source: url
+  org.opencontainers.image.licenses: spdx
+
+strict-labels: true
+disable-ignore-pragma: true
