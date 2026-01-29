@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 from pathlib import Path
 
-from library import manifest
+from library import fetch, manifest
 from library.utils import docker
 from library.utils.console import console
-from library.utils.git import fetch_dockerfile
 
 
 def pull_image(image: str) -> None:
@@ -52,19 +52,13 @@ def run_hadolint(
         git_info = data["git"]
         build_info = data["build"]
         repo = git_info["repo"]
-        fetch = git_info.get("fetch")
         commit = git_info["commit"]
         path = build_info.get("path")
         dockerfile = build_info.get("dockerfile")
 
         console.print(f"[cyan]Fetching Dockerfile: {repo}[/cyan]")
-        dockerfile_contents = fetch_dockerfile(
-            repo,
-            fetch,
-            commit,
-            path,
-            dockerfile,
-        )
+        raw_url = fetch.url(repo, commit, path, dockerfile)
+        dockerfile_contents = fetch.contents(raw_url)
         console.print("[cyan]Resolved Dockerfile Contents:[/cyan]")
         console.print(f"\n{dockerfile_contents}\n")
     else:
@@ -95,8 +89,14 @@ def run_hadolint(
             "--config",
             "/work/.hadolint.yaml",
         ]
+        command.extend(["--format", "json"])
         if verbose:
             command.append("--verbose")
         command.append("/work/Dockerfile")
         console.print("[cyan]Running hadolint...[/cyan]")
-        return docker.run(command, verbose=verbose).returncode
+        process = docker.run(command, verbose=verbose)
+        output = process.stdout.strip()
+        if output:
+            parsed = json.loads(output)
+            console.print_json(json.dumps(parsed, indent=2))
+        return process.returncode

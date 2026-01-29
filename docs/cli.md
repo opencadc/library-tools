@@ -16,13 +16,13 @@ Validate a manifest against the Pydantic schema in `library/schema.py`.
 library validate manifests/example.yml
 ```
 
-## `hadolint`
+## `lint`
 
 Lint a Dockerfile from a manifest or a local Dockerfile.
 
 ```bash
-library hadolint manifests/example.yml
-library hadolint --dockerfile images/python/Dockerfile
+library lint manifests/example.yml
+library lint --dockerfile images/python/Dockerfile
 ```
 
 ## `renovate`
