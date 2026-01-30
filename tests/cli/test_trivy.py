@@ -11,7 +11,7 @@ def test_library_scan_invokes_trivy_with_json(cli_runner, monkeypatch) -> None:
     """Invoke scan and assert Trivy args include JSON + severity."""
     captured = {}
 
-    def fake_run(command, verbose=False, emit_output=True):
+    def fake_run(command, verbose=False, emit_output=True, stream_output=False):
         captured["command"] = command
         return subprocess.CompletedProcess(command, 0, "[]", "")
 
@@ -42,7 +42,7 @@ def test_library_scan_pulls_missing_image(cli_runner, monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "library.cli.trivy.docker.run",
-        lambda command, verbose=False, emit_output=True: subprocess.CompletedProcess(
+        lambda command, verbose=False, emit_output=True, stream_output=False: subprocess.CompletedProcess(
             command, 0, "[]", ""
         ),
     )
@@ -58,7 +58,7 @@ def test_library_scan_mounts_cache_dir(cli_runner, monkeypatch, tmp_path) -> Non
     cache_dir = tmp_path / "trivy-cache"
     captured = {}
 
-    def fake_run(command, verbose=False, emit_output=True):
+    def fake_run(command, verbose=False, emit_output=True, stream_output=False):
         captured["command"] = command
         return subprocess.CompletedProcess(command, 0, "[]", "")
 

@@ -63,7 +63,9 @@ def run(image: str, cache_dir: Path, verbose: bool) -> int:
             image,
         ]
 
-        process = docker.run(command, verbose=verbose, emit_output=False)
+        process = docker.run(
+            command, verbose=verbose, emit_output=False, stream_output=True
+        )
 
         if process.stderr:
             print(process.stderr, end="", file=sys.stderr)

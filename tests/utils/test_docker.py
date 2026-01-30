@@ -103,3 +103,28 @@ def test_run_emit_output_false_suppresses_console(monkeypatch) -> None:
     docker.run(["docker", "run", "busybox"], verbose=True, emit_output=False)
 
     assert calls == []
+
+
+def test_run_stream_output_passthrough(monkeypatch) -> None:
+    """stream_output=True should stream directly without console output."""
+    calls = []
+    captured = {}
+
+    def fake_print(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    def fake_run(command, check=False, stdout=None, stderr=None, text=None):
+        captured["stdout"] = stdout
+        captured["stderr"] = stderr
+        captured["text"] = text
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(docker.console, "print", fake_print)
+    monkeypatch.setattr(docker.subprocess, "run", fake_run)
+
+    docker.run(["docker", "run", "busybox"], verbose=False, stream_output=True)
+
+    assert calls == []
+    assert captured["stdout"] is None
+    assert captured["stderr"] is None
+    assert captured["text"] is True

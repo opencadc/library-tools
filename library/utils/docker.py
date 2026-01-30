@@ -54,6 +54,7 @@ def run(
     *,
     verbose: bool,
     emit_output: bool = True,
+    stream_output: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     """Run a Docker command with follow-along logs.
 
@@ -61,10 +62,18 @@ def run(
         command: Full Docker command to execute.
         verbose: Whether to emit stdout from the process.
         emit_output: Whether to emit process output to console.
+        stream_output: Whether to stream output directly to stdout/stderr.
 
     Returns:
         The completed process.
     """
+    if stream_output:
+        return subprocess.run(
+            list(command),
+            check=False,
+            text=True,
+        )
+
     if emit_output:
         console.print("[cyan]Docker: Starting Container...[/cyan]")
     process = subprocess.run(
