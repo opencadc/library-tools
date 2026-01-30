@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import subprocess
+import sys
 
 from library.utils import docker
 
@@ -64,6 +65,26 @@ def test_pull_quiet_suppresses_output(monkeypatch) -> None:
     assert captured["stdout"] is subprocess.PIPE
     assert captured["stderr"] is subprocess.PIPE
     assert captured["text"] is True
+
+
+def test_pull_quiet_emits_stderr_on_failure(monkeypatch) -> None:
+    """Quiet pulls should emit stderr on failure."""
+    calls = []
+
+    def fake_print(*args, **kwargs):
+        calls.append((args, kwargs))
+
+    def fake_run(command, check=False, stdout=None, stderr=None, text=None):
+        return subprocess.CompletedProcess(command, 1, "", "boom")
+
+    monkeypatch.setattr(docker.subprocess, "run", fake_run)
+    monkeypatch.setattr("builtins.print", fake_print)
+
+    docker.pull("docker.io/library/alpine:3.20", quiet=True)
+
+    assert len(calls) == 1
+    assert calls[0][0][0] == "boom"
+    assert calls[0][1].get("file") is sys.stderr
 
 
 def test_run_emit_output_false_suppresses_console(monkeypatch) -> None:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 import subprocess
+import sys
 
 from library.utils.console import console
 
@@ -45,7 +46,7 @@ def pull(image: str, *, quiet: bool = False) -> None:
     if not quiet:
         console.print("[cyan]Docker: Pull Complete.[/cyan]")
     if quiet and result.returncode != 0 and result.stderr:
-        console.print(result.stderr, end="", stderr=True)
+        print(result.stderr, end="", file=sys.stderr)
 
 
 def run(
