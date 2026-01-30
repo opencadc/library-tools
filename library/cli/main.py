@@ -41,19 +41,7 @@ cli: typer.Typer = typer.Typer(
 )
 
 
-@cli.command("validate", help="Validate a library manifest.")
-def validate_command(path: Path) -> None:
-    """Validate a manifest file against the schema.
-
-    Args:
-        path: Path to the manifest to validate.
-    """
-    data = manifest.read(path)
-    manifest.validate(data)
-    console.print("[green]✅ Manifest is valid.[/green]")
-
-
-@cli.command("lint", help="Lint a Dockerfile from a manifest.")
+@cli.command("lint", help="Check for best practices.")
 def hadolint_command(
     path: Path | None = typer.Argument(None, help="Path to a manifest file."),
     dockerfile: Path | None = typer.Option(
@@ -78,7 +66,28 @@ def hadolint_command(
     raise typer.Exit(exit_code)
 
 
-@cli.command("renovate", help="Run renovate against a Dockerfile.")
+@cli.command("scan", help="Check Container Image for CVEs.")
+def scan_command(
+    image: str = typer.Argument(..., help="Docker image to scan."),
+    cache_dir: Path = typer.Option(
+        Path("~/.cache/trivy"), "--cache-dir", help="Trivy DB cache directory."
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output."
+    ),
+) -> None:
+    """Run Trivy against a Docker image.
+
+    Args:
+        image: Docker image to scan.
+        cache_dir: Trivy DB cache directory.
+        verbose: Whether to emit verbose output.
+    """
+    exit_code = trivy.run(image, cache_dir, verbose)
+    raise typer.Exit(exit_code)
+
+
+@cli.command("renovate", help="Find outdated dependencies.")
 def renovate_command(
     path: Path | None = typer.Argument(None, help="Path to a manifest file."),
     dockerfile: Path | None = typer.Option(
@@ -119,25 +128,16 @@ def renovate_command(
         console.print_json(json.dumps(summary))
 
 
-@cli.command("scan", help="Scan a Docker image for CVEs.")
-def scan_command(
-    image: str = typer.Argument(..., help="Docker image to scan."),
-    cache_dir: Path = typer.Option(
-        Path("~/.cache/trivy"), "--cache-dir", help="Trivy DB cache directory."
-    ),
-    verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Enable verbose output."
-    ),
-) -> None:
-    """Run Trivy against a Docker image.
+@cli.command("validate", help="Check manifest for compliance.")
+def validate_command(path: Path) -> None:
+    """Validate a manifest file against the schema.
 
     Args:
-        image: Docker image to scan.
-        cache_dir: Trivy DB cache directory.
-        verbose: Whether to emit verbose output.
+        path: Path to the manifest to validate.
     """
-    exit_code = trivy.run(image, cache_dir, verbose)
-    raise typer.Exit(exit_code)
+    data = manifest.read(path)
+    manifest.validate(data)
+    console.print("[green]✅ Manifest is valid.[/green]")
 
 
 def main() -> None:

@@ -33,6 +33,7 @@ def test_image_exists_true_when_inspect_succeeds(monkeypatch) -> None:
 
 def test_image_exists_false_when_inspect_fails(monkeypatch) -> None:
     """Return False when docker image inspect fails."""
+
     def fake_run(command, check=False, stdout=None, stderr=None):
         return subprocess.CompletedProcess(command, 1)
 

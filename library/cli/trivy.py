@@ -32,7 +32,9 @@ def run(image: str, cache_dir: Path, verbose: bool) -> int:
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
         config_path = temp_path / ".trivy.yaml"
-        config_path.write_text(TRIVY_CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8")
+        config_path.write_text(
+            TRIVY_CONFIG_PATH.read_text(encoding="utf-8"), encoding="utf-8"
+        )
 
         command = [
             "docker",
