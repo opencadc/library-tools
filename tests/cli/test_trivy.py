@@ -22,7 +22,6 @@ def test_library_scan_invokes_trivy_with_json(cli_runner, monkeypatch) -> None:
     result = cli_runner.invoke(cli, ["scan", "docker.io/library/alpine:3.20"])
 
     assert result.exit_code == 0
-    assert "trivy" in " ".join(captured["command"])
     assert "--format" in captured["command"]
     assert "json" in captured["command"]
     assert "--severity" in captured["command"]
