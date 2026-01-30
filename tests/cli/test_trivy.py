@@ -17,7 +17,9 @@ def test_library_scan_invokes_trivy_with_json(cli_runner, monkeypatch) -> None:
 
     monkeypatch.setattr("library.cli.trivy.docker.run", fake_run)
     monkeypatch.setattr("library.cli.trivy.docker.pull", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr("library.cli.trivy.docker.image_exists", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(
+        "library.cli.trivy.docker.image_exists", lambda *_args, **_kwargs: True
+    )
 
     result = cli_runner.invoke(cli, ["scan", "docker.io/library/alpine:3.20"])
 
@@ -31,10 +33,10 @@ def test_library_scan_invokes_trivy_with_json(cli_runner, monkeypatch) -> None:
 
 def test_library_scan_pulls_missing_image(cli_runner, monkeypatch) -> None:
     """Pull target image when it is not present locally."""
-    pulled = {}
+    pulled: list[str] = []
 
-    def fake_pull(image):
-        pulled["image"] = image
+    def fake_pull(image, **_kwargs):
+        pulled.append(image)
 
     monkeypatch.setattr("library.cli.trivy.docker.pull", fake_pull)
     monkeypatch.setattr(
@@ -42,15 +44,16 @@ def test_library_scan_pulls_missing_image(cli_runner, monkeypatch) -> None:
     )
     monkeypatch.setattr(
         "library.cli.trivy.docker.run",
-        lambda command, verbose=False, emit_output=True, stream_output=False: subprocess.CompletedProcess(
-            command, 0, "[]", ""
-        ),
+        lambda command,
+        verbose=False,
+        emit_output=True,
+        stream_output=False: subprocess.CompletedProcess(command, 0, "[]", ""),
     )
 
     result = cli_runner.invoke(cli, ["scan", "docker.io/library/alpine:3.20"])
 
     assert result.exit_code == 0
-    assert pulled["image"] == "docker.io/library/alpine:3.20"
+    assert "docker.io/library/alpine:3.20" in pulled
 
 
 def test_library_scan_mounts_cache_dir(cli_runner, monkeypatch, tmp_path) -> None:
@@ -64,7 +67,9 @@ def test_library_scan_mounts_cache_dir(cli_runner, monkeypatch, tmp_path) -> Non
 
     monkeypatch.setattr("library.cli.trivy.docker.run", fake_run)
     monkeypatch.setattr("library.cli.trivy.docker.pull", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr("library.cli.trivy.docker.image_exists", lambda *_args, **_kwargs: True)
+    monkeypatch.setattr(
+        "library.cli.trivy.docker.image_exists", lambda *_args, **_kwargs: True
+    )
 
     result = cli_runner.invoke(
         cli,
