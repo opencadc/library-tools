@@ -1,0 +1,10 @@
+format: json
+severity:
+  - HIGH
+  - CRITICAL
+scanners:
+  - vuln
+vuln-type:
+  - os
+  - library
+ignore-unfixed: false
