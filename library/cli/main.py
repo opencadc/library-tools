@@ -10,7 +10,7 @@ import typer
 from pydantic import ValidationError
 
 from library import manifest
-from library.cli import hadolint, renovate
+from library.cli import hadolint, renovate, trivy
 from library.utils.console import console
 
 
@@ -117,6 +117,27 @@ def renovate_command(
         console.print("[yellow]No updates detected.[/yellow]")
     if json_output:
         console.print_json(json.dumps(summary))
+
+
+@cli.command("scan", help="Scan a Docker image for CVEs.")
+def scan_command(
+    image: str = typer.Argument(..., help="Docker image to scan."),
+    cache_dir: Path = typer.Option(
+        Path("~/.cache/trivy"), "--cache-dir", help="Trivy DB cache directory."
+    ),
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Enable verbose output."
+    ),
+) -> None:
+    """Run Trivy against a Docker image.
+
+    Args:
+        image: Docker image to scan.
+        cache_dir: Trivy DB cache directory.
+        verbose: Whether to emit verbose output.
+    """
+    exit_code = trivy.run(image, cache_dir, verbose)
+    raise typer.Exit(exit_code)
 
 
 def main() -> None:
