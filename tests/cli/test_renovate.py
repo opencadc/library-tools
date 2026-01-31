@@ -2,19 +2,38 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import json
+import re
 
 from library.cli import renovate
 from tests.cli.conftest import cli, skip_if_docker_unavailable
 
 
-def _write_dockerfile(path: Path) -> None:
-    """Write a minimal Dockerfile for renovate scanning.
+def _extract_json_payload(output: str) -> dict[str, object]:
+    """Extract a JSON payload from CLI output.
 
     Args:
-        path: Path to the Dockerfile.
+        output: CLI output to parse.
+
+    Returns:
+        Parsed JSON payload.
     """
-    path.write_text("FROM alpine:3.19\n", encoding="utf-8")
+    ansi_escape = re.compile(r"\x1b\[[0-9;]*m")
+    lines = [ansi_escape.sub("", line) for line in output.splitlines()]
+    start_index = None
+    for index in range(len(lines) - 1, -1, -1):
+        if lines[index].startswith("{"):
+            start_index = index
+            break
+    if start_index is None:
+        for index in range(len(lines) - 1, -1, -1):
+            if lines[index].startswith("["):
+                start_index = index
+                break
+    if start_index is None:
+        raise AssertionError("No JSON payload found in output")
+    payload = "\n".join(lines[start_index:])
+    return json.loads(payload)
 
 
 def test_build_summary_collects_updates() -> None:
@@ -34,11 +53,10 @@ def test_build_summary_collects_updates() -> None:
     assert {"ghcr.io/astral-sh/uv", "ghcr.io/prefix-dev/pixi", "python"} <= dep_names
 
 
-def test_library_renovate_runs_on_dockerfile(cli_runner, tmp_path) -> None:
+def test_library_renovate_runs_on_dockerfile(cli_runner, fixtures_dir) -> None:
     """Run renovate against a local Dockerfile."""
     skip_if_docker_unavailable()
-    dockerfile_path = tmp_path / "Dockerfile"
-    _write_dockerfile(dockerfile_path)
+    dockerfile_path = fixtures_dir / "Dockerfile.hadolint.good"
 
     result = cli_runner.invoke(cli, ["renovate", "--dockerfile", str(dockerfile_path)])
 
@@ -49,3 +67,17 @@ def test_library_renovate_runs_on_dockerfile(cli_runner, tmp_path) -> None:
         or "No updates detected" in result.stdout
         or "Renovate found" in result.stdout
     )
+
+
+def test_library_renovate_emits_json_output(cli_runner, fixtures_dir) -> None:
+    """Emit JSON updates when requested."""
+    skip_if_docker_unavailable()
+    dockerfile_path = fixtures_dir / "Dockerfile.hadolint.good"
+
+    result = cli_runner.invoke(
+        cli, ["renovate", "--dockerfile", str(dockerfile_path), "--json"]
+    )
+
+    assert result.exit_code == 0
+    payload = _extract_json_payload(result.stdout)
+    assert "updates" in payload

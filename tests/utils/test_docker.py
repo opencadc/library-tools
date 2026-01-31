@@ -38,10 +38,21 @@ class FakeContainer:
     """Fake Docker container."""
 
     def __init__(
-        self, logs: list[tuple[bytes | None, bytes | None]], exit_code: int
+        self,
+        logs: list[tuple[bytes | None, bytes | None]],
+        exit_code: int,
+        *,
+        demux_unsupported: bool = False,
+        raw_logs: list[bytes] | None = None,
+        stdout_data: bytes | None = None,
+        stderr_data: bytes | None = None,
     ) -> None:
         self._logs = logs
         self._exit_code = exit_code
+        self._demux_unsupported = demux_unsupported
+        self._raw_logs = raw_logs or []
+        self._stdout_data = stdout_data or b""
+        self._stderr_data = stderr_data or b""
         self.started = False
         self.removed = False
 
@@ -51,8 +62,17 @@ class FakeContainer:
 
     def logs(self, **kwargs):
         """Yield log tuples for the container."""
-        for entry in self._logs:
-            yield entry
+        if kwargs.get("demux") and self._demux_unsupported:
+            raise TypeError("demux not supported")
+        if kwargs.get("stream") and kwargs.get("follow"):
+            if self._demux_unsupported:
+                return iter(self._raw_logs)
+            return iter(self._logs)
+        if kwargs.get("stdout") and not kwargs.get("stderr"):
+            return self._stdout_data
+        if kwargs.get("stderr") and not kwargs.get("stdout"):
+            return self._stderr_data
+        return iter(self._logs)
 
     def wait(self):
         """Return the configured exit code."""
@@ -208,6 +228,30 @@ def test_run_stream_output_passthrough(monkeypatch) -> None:
     assert any("stderr" in call[0][0] for call in printed)
     assert result.stdout == "stdout"
     assert result.stderr == "stderr"
+
+
+def test_run_demux_fallback_collects_logs(monkeypatch) -> None:
+    """Fallback log collection should capture stdout and stderr."""
+    images = FakeImages()
+    container = FakeContainer(
+        [],
+        0,
+        demux_unsupported=True,
+        stdout_data=b"stdout\n",
+        stderr_data=b"stderr\n",
+    )
+    client = FakeClient(images, FakeContainers(container))
+    monkeypatch.setattr(docker, "get_client", lambda: client)
+
+    result = docker.run(
+        "busybox",
+        ["echo", "ok"],
+        verbose=False,
+        emit_output=False,
+    )
+
+    assert result.stdout == "stdout\n"
+    assert result.stderr == "stderr\n"
 
 
 def _skip_if_docker_unavailable() -> None:

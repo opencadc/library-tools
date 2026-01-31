@@ -1,0 +1,6 @@
+FROM alpine:3.19
+LABEL org.opencontainers.image.title="Sample"
+LABEL org.opencontainers.image.description="Sample image"
+LABEL org.opencontainers.image.vendor="CANFAR"
+LABEL org.opencontainers.image.source="https://example.com/source"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
