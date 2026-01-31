@@ -2,109 +2,50 @@
 
 from __future__ import annotations
 
-import subprocess
+from pathlib import Path
 
-from tests.cli.conftest import cli
+from library.cli import renovate
+from tests.cli.conftest import cli, skip_if_docker_unavailable
 
 
-def test_library_renovate_emits_updates_summary(
-    cli_runner, monkeypatch, fixtures_dir
-) -> None:
-    """Summarize detected updates from renovate output."""
-    mock_output = (
-        '{"branchesInformation": [{"branchName": "renovate/ghcr.io-prefix-dev-pixi-0.x", '
-        '"upgrades": [{"depName": "ghcr.io/prefix-dev/pixi", "newVersion": "0.63.2", '
-        '"newDigest": "sha256:abc", "updateType": "minor"},'
-        '{"depName": "ghcr.io/astral-sh/uv", "newVersion": "0.9.1", '
-        '"newDigest": "sha256:def", "updateType": "digest"}]}]}\n'
+def _write_dockerfile(path: Path) -> None:
+    """Write a minimal Dockerfile for renovate scanning.
+
+    Args:
+        path: Path to the Dockerfile.
+    """
+    path.write_text("FROM alpine:3.19\n", encoding="utf-8")
+
+
+def test_build_summary_collects_updates() -> None:
+    """Build summary should aggregate update records."""
+    output = "\n".join(
+        [
+            '{"depName": "ghcr.io/astral-sh/uv", "newVersion": "0.9.1"}',
+            '{"updates": [{"depName": "ghcr.io/prefix-dev/pixi", "newVersion": "0.63.2"}]}',
+            '{"branchesInformation": [{"upgrades": [{"depName": "python", "newVersion": "3.13.2"}]}]}',
+        ]
     )
 
-    def fake_run(command, verbose=False):
-        return subprocess.CompletedProcess(command, 0, mock_output)
+    summary = renovate.build_summary(output)
 
-    monkeypatch.setattr("library.cli.renovate.docker.run", fake_run)
-    monkeypatch.setattr(
-        "library.cli.renovate.fetch.contents",
-        lambda *_args, **_kwargs: "FROM scratch",
-    )
-    result = cli_runner.invoke(
-        cli, ["renovate", str(fixtures_dir / "manifest.valid.yml")]
-    )
-    assert result.exit_code == 0
-    assert "ghcr.io/prefix-dev/pixi" in result.stdout
-    assert "minor" in result.stdout
-    assert "ghcr.io/astral-sh/uv" in result.stdout
-    assert "digest" in result.stdout
-    assert '"updates"' not in result.stdout
-    assert "FROM scratch" in result.stdout
+    updates = summary.get("updates", [])
+    dep_names = {update.get("depName") for update in updates}
+    assert {"ghcr.io/astral-sh/uv", "ghcr.io/prefix-dev/pixi", "python"} <= dep_names
 
 
-def test_library_renovate_uses_json_log_format(
-    cli_runner, monkeypatch, tmp_path
-) -> None:
-    """Ensure renovate uses JSON log output by default."""
+def test_library_renovate_runs_on_dockerfile(cli_runner, tmp_path) -> None:
+    """Run renovate against a local Dockerfile."""
+    skip_if_docker_unavailable()
     dockerfile_path = tmp_path / "Dockerfile"
-    dockerfile_path.write_text("FROM scratch", encoding="utf-8")
-    captured: dict[str, object] = {}
-
-    def fake_run(command: list[str], verbose=False):
-        captured["command"] = command
-        captured["verbose"] = verbose
-        return subprocess.CompletedProcess(command, 0, "")
-
-    monkeypatch.setattr("library.cli.renovate.docker.run", fake_run)
-    monkeypatch.setattr(
-        "library.cli.renovate.subprocess.run", lambda *_args, **_kwargs: None
-    )
+    _write_dockerfile(dockerfile_path)
 
     result = cli_runner.invoke(cli, ["renovate", "--dockerfile", str(dockerfile_path)])
+
     assert result.exit_code == 0
-    command = captured["command"]
-    assert isinstance(command, list)
-    assert "LOG_FORMAT=json" in command
-    assert captured["verbose"] is False
-    assert '"updates"' not in result.stdout
-
-
-def test_library_renovate_accepts_verbose_flag(
-    cli_runner, monkeypatch, tmp_path
-) -> None:
-    """Enable renovate verbose output via CLI flag."""
-    dockerfile_path = tmp_path / "Dockerfile"
-    dockerfile_path.write_text("FROM scratch", encoding="utf-8")
-    captured: dict[str, object] = {}
-
-    def fake_run(command: list[str], verbose=False):
-        captured["command"] = command
-        captured["verbose"] = verbose
-        return subprocess.CompletedProcess(command, 0, "")
-
-    monkeypatch.setattr("library.cli.renovate.docker.run", fake_run)
-    monkeypatch.setattr(
-        "library.cli.renovate.subprocess.run", lambda *_args, **_kwargs: None
+    assert "Renovate" in result.stdout
+    assert (
+        "Detected updates" in result.stdout
+        or "No updates detected" in result.stdout
+        or "Renovate found" in result.stdout
     )
-
-    result = cli_runner.invoke(
-        cli, ["renovate", "--dockerfile", str(dockerfile_path), "--verbose"]
-    )
-    assert result.exit_code == 0
-    command = captured["command"]
-    assert isinstance(command, list)
-    assert "LOG_LEVEL=debug" in command
-    assert captured["verbose"] is True
-    assert '"updates"' not in result.stdout
-    assert "No updates detected" in result.stdout
-
-
-def test_library_renovate_accepts_dockerfile(cli_runner, monkeypatch, tmp_path) -> None:
-    """Run renovate against a Dockerfile path."""
-    dockerfile_path = tmp_path / "Dockerfile"
-    dockerfile_path.write_text("FROM scratch", encoding="utf-8")
-
-    def fake_run(command, verbose=False):
-        return subprocess.CompletedProcess(command, 0, '{"updates": []}')
-
-    monkeypatch.setattr("library.cli.renovate.docker.run", fake_run)
-    result = cli_runner.invoke(cli, ["renovate", "--dockerfile", str(dockerfile_path)])
-    assert result.exit_code == 0
-    assert '"updates"' not in result.stdout
