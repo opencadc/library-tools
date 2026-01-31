@@ -16,7 +16,7 @@ repos:
         always_run: true
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.17.1
+    rev: v1.19.1
     hooks:
       - id: mypy
         additional_dependencies:
@@ -26,7 +26,6 @@ repos:
           - pydantic
           - typer
           - pytest
-          - gitpython
         args: [--config-file=pyproject.toml]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -58,7 +57,7 @@ repos:
       args: ["cc", "--min=B","--total-average"]
 
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.28.0
+    rev: v8.30.0
     hooks:
       - id: gitleaks
 
@@ -70,7 +69,7 @@ repos:
         exclude: (^|/)uv\.lock$|^tests/|^manifests/
   # Python code formatting and linting with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.12.10
+    rev: v0.14.14
     hooks:
       # Linter
       - id: ruff
@@ -86,6 +85,6 @@ repos:
 
   # GitHub Actions workflow linting
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.7
+    rev: v1.7.10
     hooks:
       - id: actionlint
