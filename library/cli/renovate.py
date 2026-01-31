@@ -92,26 +92,30 @@ def run_renovate(
             config_source.read_text(encoding="utf-8"), encoding="utf-8"
         )
         command = [
-            "docker",
-            "run",
-            "--rm",
-            "-i",
-            "-e",
-            "LOG_FORMAT=json",
-            "-e",
-            "LOG_LEVEL=debug",
-            "-v",
-            f"{temp_path}:/repo",
-            "-w",
-            "/repo",
-            "renovate/renovate:latest",
             "--platform=local",
             "--require-config=ignored",
             "--dry-run=full",
         ]
         docker.pull("docker.io/renovate/renovate:latest")
         console.print("[cyan]Running renovate...[/cyan]")
-        output = (docker.run(command, verbose=verbose).stdout or "").strip()
+        result = docker.run(
+            "renovate/renovate:latest",
+            command,
+            volumes={str(temp_path): {"bind": "/repo", "mode": "rw"}},
+            working_dir="/repo",
+            environment={"LOG_FORMAT": "json", "LOG_LEVEL": "debug"},
+            stdin_open=True,
+            verbose=verbose,
+        )
+        output = (result.stdout or "").strip()
 
     console.print("[cyan]Generating JSON summary...[/cyan]")
-    return build_summary(output)
+    summary = build_summary(output)
+    updates = summary.get("updates", [])
+    if updates:
+        console.print(
+            f"[yellow]Renovate found {len(updates)} update candidates.[/yellow]"
+        )
+    else:
+        console.print("[green]Renovate: No updates found.[/green]")
+    return summary

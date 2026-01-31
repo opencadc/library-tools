@@ -66,27 +66,33 @@ def run(
         )
         docker.pull("docker.io/hadolint/hadolint:latest")
         command = [
-            "docker",
-            "run",
-            "--rm",
-            "-i",
-            "-v",
-            f"{temp_path}:/work",
-            "-w",
-            "/work",
-            "hadolint/hadolint:latest",
             "hadolint",
             "--config",
             "/work/.hadolint.yaml",
+            "--format",
+            "json",
         ]
-        command.extend(["--format", "json"])
         if verbose:
             command.append("--verbose")
         command.append("/work/Dockerfile")
         console.print("[cyan]Running hadolint...[/cyan]")
-        process = docker.run(command, verbose=verbose)
-        output = process.stdout.strip()
+        result = docker.run(
+            "hadolint/hadolint:latest",
+            command,
+            volumes={str(temp_path): {"bind": "/work", "mode": "rw"}},
+            working_dir="/work",
+            stdin_open=True,
+            verbose=verbose,
+        )
+        output = result.stdout.strip()
+        violations = 0
         if output:
             parsed = json.loads(output)
             console.print_json(json.dumps(parsed, indent=2))
-        return process.returncode
+            if isinstance(parsed, list):
+                violations = len(parsed)
+        if violations:
+            console.print(f"[red]Hadolint violations found: {violations}[/red]")
+        else:
+            console.print("[green]Hadolint: No violations found.[/green]")
+        return result.exit_code
