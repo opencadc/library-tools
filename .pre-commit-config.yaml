@@ -55,6 +55,22 @@ repos:
       language: python
       additional_dependencies: [radon]
       args: ["cc", "--min=B","--total-average"]
+    - id: radon-hal
+      name: radon halstead
+      entry: radon
+      verbose: true
+      language: python
+      additional_dependencies: [radon]
+      pass_filenames: false
+      args: ["hal", "library", "tests"]
+    - id: radon-mi
+      name: radon maintainability
+      entry: radon
+      verbose: true
+      language: python
+      additional_dependencies: [radon]
+      pass_filenames: false
+      args: ["mi", "-s", "library", "tests"]
 
   - repo: https://github.com/gitleaks/gitleaks
     rev: v8.30.0
