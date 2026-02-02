@@ -2,6 +2,6 @@
 
 from __future__ import annotations
 
-from library.utils import docker, fetch
+from library.utils import runtime as docker, fetch
 
 __all__ = ["docker", "fetch"]

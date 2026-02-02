@@ -2,9 +2,14 @@
 
 from __future__ import annotations
 
-from typing import List, Optional, Literal
+from typing import Any, List, Optional, Literal, cast
+from pathlib import Path
 
+from yaml import safe_load
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field
+
+from library.utils import fetch
+from library.utils.console import console
 
 
 PLATFORMS = Literal[
@@ -251,6 +256,52 @@ class Manifest(BaseModel):
             "description": "Schema to capture ownership, build source, intent, and identity for library artifacts.",
         },
     )
+
+    def dockerfile(self) -> str:
+        """Fetch Dockerfile contents for this manifest.
+
+        Returns:
+            Dockerfile contents as text.
+        """
+        repo = str(self.git.repo)
+        commit = self.git.commit
+        path = self.build.path
+        dockerfile = self.build.dockerfile
+        console.print(f"[cyan]Fetching Dockerfile: {repo}[/cyan]")
+        raw_url = fetch.url(repo, commit, path, dockerfile)
+        return fetch.contents(raw_url)
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> Manifest:
+        """Load a manifest from a YAML file.
+
+        Args:
+            path: Path to the manifest YAML file.
+
+        Returns:
+            Manifest model instance.
+        """
+        with path.open("r", encoding="utf-8") as datafile:
+            data = safe_load(datafile)
+        if data is None:
+            data = {}
+        if not isinstance(data, dict):
+            raise ValueError("Manifest must be a dictionary.")
+        return cls(**cast(dict[str, Any], data))
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Manifest:
+        """Load a manifest from a dictionary.
+
+        Args:
+            data: Manifest data as a dictionary.
+
+        Returns:
+            Manifest model instance.
+        """
+        if not isinstance(data, dict):
+            raise ValueError("Manifest must be a dictionary.")
+        return cls(**cast(dict[str, Any], data))
 
 
 if __name__ == "__main__":

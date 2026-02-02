@@ -23,12 +23,24 @@ def _normalize_repo_path(path: str) -> str:
     Raises:
         ValueError: If the path is empty after normalization.
     """
-    normalized = path.strip("/")
-    if normalized.endswith(".git"):
-        normalized = normalized[: -len(".git")]
+    normalized = _strip_git_suffix(path.strip("/"))
     if not normalized:
         raise ValueError("Repository path is missing.")
     return normalized
+
+
+def _strip_git_suffix(path: str) -> str:
+    """Strip a trailing .git suffix.
+
+    Args:
+        path: Repository path.
+
+    Returns:
+        Repository path without a .git suffix.
+    """
+    if path.endswith(".git"):
+        return path[: -len(".git")]
+    return path
 
 
 def _normalize_file_path(path: str | None, filename: str) -> str:
@@ -41,17 +53,30 @@ def _normalize_file_path(path: str | None, filename: str) -> str:
     Returns:
         Repo-relative path to the file.
     """
+    base = _clean_repo_subdir(path)
+    if not base:
+        return filename
+    return posixpath.join(base, filename)
+
+
+def _clean_repo_subdir(path: str | None) -> str:
+    """Clean a repository subdirectory path.
+
+    Args:
+        path: Directory path within the repository.
+
+    Returns:
+        Normalized subdirectory path or empty string.
+    """
     base = (path or "").strip()
     if base in {"", ".", "./"}:
-        return filename
+        return ""
     if base.startswith("./"):
         base = base[2:]
     if base.startswith("/"):
         base = base[1:]
     base = base.rstrip("/")
-    if not base:
-        return filename
-    return posixpath.join(base, filename)
+    return base
 
 
 def url(repo: str, commit: str, path: str | None, filename: str) -> str:
@@ -100,20 +125,62 @@ def contents(raw_url: str, timeout: float = 10.0) -> str:
         RuntimeError: For network errors, HTTP errors, or decode failures.
     """
     parsed = urlparse(raw_url)
-    if parsed.scheme not in {"http", "https"}:
+    _validate_scheme(parsed.scheme)
+    payload = _fetch_payload(raw_url, timeout)
+    return _decode_payload(payload, raw_url)
+
+
+def _validate_scheme(scheme: str) -> None:
+    """Validate a URL scheme.
+
+    Args:
+        scheme: URL scheme.
+
+    Raises:
+        ValueError: If the scheme is not http or https.
+    """
+    if scheme not in {"http", "https"}:
         raise ValueError("Unsupported URL scheme.")
 
+
+def _fetch_payload(raw_url: str, timeout: float) -> bytes:
+    """Fetch remote payload data.
+
+    Args:
+        raw_url: Raw file URL to fetch.
+        timeout: Timeout in seconds for the HTTP request.
+
+    Returns:
+        Raw response payload.
+
+    Raises:
+        RuntimeError: For network errors or HTTP errors.
+    """
     try:
         with urllib.request.urlopen(raw_url, timeout=timeout) as response:
             status = response.getcode()
             if status is not None and status != 200:
                 raise RuntimeError(f"Fetch failed ({status}) for {raw_url}")
-            payload = response.read()
+            return response.read()
     except urllib.error.HTTPError as exc:
         raise RuntimeError(f"Fetch failed ({exc.code}) for {raw_url}") from exc
     except urllib.error.URLError as exc:
         raise RuntimeError(f"Failed to fetch URL {raw_url}: {exc}") from exc
 
+
+def _decode_payload(payload: bytes, raw_url: str) -> str:
+    """Decode response payload as UTF-8.
+
+    Args:
+        payload: Raw response payload.
+        raw_url: Source URL for error messages.
+
+    Returns:
+        Decoded payload as text.
+
+    Raises:
+        RuntimeError: If decoding fails.
+    """
     try:
         return payload.decode("utf-8")
     except UnicodeDecodeError as exc:

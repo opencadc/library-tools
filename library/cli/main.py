@@ -9,7 +9,7 @@ import json
 import typer
 from pydantic import ValidationError
 
-from library import manifest
+from library import schema
 from library.cli import hadolint, renovate, trivy
 from library.utils.console import console
 
@@ -23,6 +23,47 @@ def callback(ctx: typer.Context) -> None:
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
         raise typer.Exit(0)
+
+
+def _format_update_line(update: dict[str, object]) -> str | None:
+    """Format a single renovate update line.
+
+    Args:
+        update: Update record from renovate.
+
+    Returns:
+        Formatted update line or None.
+    """
+    dep_name = update.get("depName") or update.get("packageName")
+    new_value = update.get("newValue") or update.get("newVersion")
+    new_digest = update.get("newDigest")
+    update_type = update.get("updateType") or "update"
+    if not dep_name or not new_value:
+        return None
+    digest_suffix = f"@{new_digest}" if new_digest else ""
+    return f"- {dep_name}: {new_value}{digest_suffix} ({update_type})"
+
+
+def _emit_renovate_summary(
+    summary: dict[str, list[dict[str, object]]], *, json_output: bool
+) -> None:
+    """Emit renovate summary output.
+
+    Args:
+        summary: Renovate summary data.
+        json_output: Whether to emit JSON output.
+    """
+    updates = summary.get("updates", [])
+    if updates:
+        console.print("[cyan]Detected updates:[/cyan]")
+        for update in updates:
+            line = _format_update_line(update)
+            if line:
+                console.print(line)
+    else:
+        console.print("[yellow]No updates detected.[/yellow]")
+    if json_output:
+        console.print_json(json.dumps(summary))
 
 
 cli: typer.Typer = typer.Typer(
@@ -109,23 +150,7 @@ def renovate_command(
         json_output: Whether to emit JSON output.
     """
     summary = renovate.run_renovate(path, dockerfile, verbose)
-    updates = summary.get("updates", [])
-    if updates:
-        console.print("[cyan]Detected updates:[/cyan]")
-        for update in updates:
-            dep_name = update.get("depName") or update.get("packageName")
-            new_value = update.get("newValue") or update.get("newVersion")
-            new_digest = update.get("newDigest")
-            update_type = update.get("updateType") or "update"
-            if dep_name and new_value:
-                digest_suffix = f"@{new_digest}" if new_digest else ""
-                console.print(
-                    f"- {dep_name}: {new_value}{digest_suffix} ({update_type})"
-                )
-    else:
-        console.print("[yellow]No updates detected.[/yellow]")
-    if json_output:
-        console.print_json(json.dumps(summary))
+    _emit_renovate_summary(summary, json_output=json_output)
 
 
 @cli.command("validate", help="Check manifest for compliance.")
@@ -135,8 +160,7 @@ def validate_command(path: Path) -> None:
     Args:
         path: Path to the manifest to validate.
     """
-    data = manifest.read(path)
-    manifest.validate(data)
+    schema.Manifest.from_yaml(path)
     console.print("[green]✅ Manifest is valid.[/green]")
 
 

@@ -6,8 +6,9 @@ import json
 import tempfile
 from pathlib import Path
 
-from library import manifest, RENOVATE_CONFIG_PATH
-from library.utils import docker, fetch
+from library import RENOVATE_CONFIG_PATH
+from library.cli import helpers
+from library.utils import docker
 from library.utils.console import console
 
 
@@ -41,6 +42,65 @@ def build_summary(output: str) -> dict[str, list[dict[str, object]]]:
     return {"updates": updates}
 
 
+def _prepare_workspace(temp_path: Path, dockerfile_contents: str) -> None:
+    """Prepare renovate workspace files.
+
+    Args:
+        temp_path: Workspace directory.
+        dockerfile_contents: Dockerfile contents to write.
+    """
+    dockerfile_path = temp_path / "Dockerfile"
+    config_source = RENOVATE_CONFIG_PATH
+    config_path = temp_path / "renovate.json5"
+    console.print("[cyan]Preparing renovate workspace...[/cyan]")
+    dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
+    config_path.write_text(config_source.read_text(encoding="utf-8"), encoding="utf-8")
+
+
+def _run_renovate_container(temp_path: Path, verbose: bool) -> str:
+    """Run renovate in a container.
+
+    Args:
+        temp_path: Workspace directory.
+        verbose: Whether to emit verbose output.
+
+    Returns:
+        Renovate output logs.
+    """
+    command = [
+        "--platform=local",
+        "--require-config=ignored",
+        "--dry-run=full",
+    ]
+    docker.pull("docker.io/renovate/renovate:latest")
+    console.print("[cyan]Running renovate...[/cyan]")
+    result = docker.run(
+        "renovate/renovate:latest",
+        command,
+        volumes={str(temp_path): {"bind": "/repo", "mode": "rw"}},
+        working_dir="/repo",
+        environment={"LOG_FORMAT": "json", "LOG_LEVEL": "debug"},
+        stdin_open=True,
+        verbose=verbose,
+    )
+    return (result.stdout or "").strip()
+
+
+def _report_summary(summary: dict[str, list[dict[str, object]]]) -> None:
+    """Report renovate summary output.
+
+    Args:
+        summary: Renovate summary data.
+    """
+    updates = summary.get("updates", [])
+    if updates:
+        console.print(
+            f"[yellow]Renovate found {len(updates)} update candidates.[/yellow]"
+        )
+    else:
+        console.print("[green]Renovate: No updates found.[/green]")
+
+
 def run_renovate(
     manifest_path: Path | None,
     dockerfile_path: Path | None,
@@ -59,63 +119,16 @@ def run_renovate(
     Raises:
         ValueError: If neither a manifest nor Dockerfile path is provided.
     """
-    dockerfile_contents: str
-
-    if dockerfile_path is not None:
-        console.print(f"[cyan]Reading Dockerfile: {dockerfile_path}[/cyan]")
-        dockerfile_contents = dockerfile_path.read_text(encoding="utf-8")
-    elif manifest_path is not None:
-        console.print(f"[cyan]Reading Manifest: {manifest_path}[/cyan]")
-        data = manifest.read(manifest_path)
-        manifest.validate(data)
-        git_info = data["git"]
-        build_info = data["build"]
-        repo = git_info["repo"]
-        commit = git_info["commit"]
-        path = build_info.get("path")
-        dockerfile = build_info.get("dockerfile")
-        raw_url = fetch.url(repo, commit, path, dockerfile)
-        dockerfile_contents = fetch.contents(raw_url)
-        console.print("[cyan]Resolved Dockerfile Contents:[/cyan]")
-        console.print(f"\n{dockerfile_contents}\n")
-    else:
-        raise ValueError("Either manifest_path or dockerfile_path must be provided")
+    dockerfile_contents = helpers.resolve_dockerfile_contents(
+        manifest_path, dockerfile_path
+    )
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
-        dockerfile_path = temp_path / "Dockerfile"
-        config_source = RENOVATE_CONFIG_PATH
-        config_path = temp_path / "renovate.json5"
-        console.print("[cyan]Preparing renovate workspace...[/cyan]")
-        dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
-        config_path.write_text(
-            config_source.read_text(encoding="utf-8"), encoding="utf-8"
-        )
-        command = [
-            "--platform=local",
-            "--require-config=ignored",
-            "--dry-run=full",
-        ]
-        docker.pull("docker.io/renovate/renovate:latest")
-        console.print("[cyan]Running renovate...[/cyan]")
-        result = docker.run(
-            "renovate/renovate:latest",
-            command,
-            volumes={str(temp_path): {"bind": "/repo", "mode": "rw"}},
-            working_dir="/repo",
-            environment={"LOG_FORMAT": "json", "LOG_LEVEL": "debug"},
-            stdin_open=True,
-            verbose=verbose,
-        )
-        output = (result.stdout or "").strip()
+        _prepare_workspace(temp_path, dockerfile_contents)
+        output = _run_renovate_container(temp_path, verbose)
 
     console.print("[cyan]Generating JSON summary...[/cyan]")
     summary = build_summary(output)
-    updates = summary.get("updates", [])
-    if updates:
-        console.print(
-            f"[yellow]Renovate found {len(updates)} update candidates.[/yellow]"
-        )
-    else:
-        console.print("[green]Renovate: No updates found.[/green]")
+    _report_summary(summary)
     return summary
