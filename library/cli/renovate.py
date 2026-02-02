@@ -42,21 +42,6 @@ def build_summary(output: str) -> dict[str, list[dict[str, object]]]:
     return {"updates": updates}
 
 
-def _prepare_workspace(temp_path: Path, dockerfile_contents: str) -> None:
-    """Prepare renovate workspace files.
-
-    Args:
-        temp_path: Workspace directory.
-        dockerfile_contents: Dockerfile contents to write.
-    """
-    dockerfile_path = temp_path / "Dockerfile"
-    config_source = RENOVATE_CONFIG_PATH
-    config_path = temp_path / "renovate.json5"
-    console.print("[cyan]Preparing renovate workspace...[/cyan]")
-    dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
-    config_path.write_text(config_source.read_text(encoding="utf-8"), encoding="utf-8")
-
-
 def _run_renovate_container(temp_path: Path, verbose: bool) -> str:
     """Run renovate in a container.
 
@@ -125,7 +110,13 @@ def run_renovate(
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
-        _prepare_workspace(temp_path, dockerfile_contents)
+        helpers.prepare_workspace(
+            temp_path=temp_path,
+            dockerfile_contents=dockerfile_contents,
+            config_source=RENOVATE_CONFIG_PATH,
+            config_name="renovate.json5",
+            label="renovate",
+        )
         output = _run_renovate_container(temp_path, verbose)
 
     console.print("[cyan]Generating JSON summary...[/cyan]")

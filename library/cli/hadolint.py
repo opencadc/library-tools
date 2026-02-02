@@ -12,22 +12,6 @@ from library.utils import docker
 from library.utils.console import console
 
 
-def _prepare_workspace(temp_path: Path, dockerfile_contents: str) -> None:
-    """Prepare the hadolint workspace.
-
-    Args:
-        temp_path: Workspace directory.
-        dockerfile_contents: Dockerfile contents to write.
-    """
-    dockerfile_path = temp_path / "Dockerfile"
-    config_source = HADOLINT_CONFIG_PATH
-    config_path = temp_path / ".hadolint.yaml"
-
-    console.print("[cyan]Preparing hadolint workspace...[/cyan]")
-    dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
-    config_path.write_text(config_source.read_text(encoding="utf-8"), encoding="utf-8")
-
-
 def _run_hadolint_container(temp_path: Path, verbose: bool) -> tuple[str, int]:
     """Run hadolint in a container.
 
@@ -115,7 +99,13 @@ def run(
 
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)
-        _prepare_workspace(temp_path, dockerfile_contents)
+        helpers.prepare_workspace(
+            temp_path=temp_path,
+            dockerfile_contents=dockerfile_contents,
+            config_source=HADOLINT_CONFIG_PATH,
+            config_name=".hadolint.yaml",
+            label="hadolint",
+        )
         output, exit_code = _run_hadolint_container(temp_path, verbose)
         violations = _emit_hadolint_json(output)
         _report_hadolint_violations(violations)

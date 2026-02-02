@@ -59,3 +59,27 @@ def resolve_dockerfile_contents(
     console.print("[cyan]Resolved Dockerfile Contents:[/cyan]")
     console.print(f"\n{dockerfile_contents}\n")
     return dockerfile_contents
+
+
+def prepare_workspace(
+    *,
+    temp_path: Path,
+    dockerfile_contents: str,
+    config_source: Path,
+    config_name: str,
+    label: str,
+) -> None:
+    """Prepare a workspace with Dockerfile and config.
+
+    Args:
+        temp_path: Workspace directory.
+        dockerfile_contents: Dockerfile contents to write.
+        config_source: Configuration file source path.
+        config_name: Configuration file name in the workspace.
+        label: Label used for console output.
+    """
+    dockerfile_path = temp_path / "Dockerfile"
+    config_path = temp_path / config_name
+    console.print(f"[cyan]Preparing {label} workspace...[/cyan]")
+    dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
+    config_path.write_text(config_source.read_text(encoding="utf-8"), encoding="utf-8")
