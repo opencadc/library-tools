@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 from library import TRIVY_CONFIG_PATH
+from library.cli import helpers
 from library.utils import docker
 from library.utils.console import console
 
@@ -112,10 +113,12 @@ def _emit_trivy_results(output: str) -> int:
     vulnerabilities = 0
     if output:
         try:
-            parsed = json.loads(output)
-            console.print_json(json.dumps(parsed, indent=2))
-            for item in parsed.get("Results", []):
-                vulnerabilities += len(item.get("Vulnerabilities", []))
+            parsed = helpers.parse_json_output(output)
+            helpers.print_json_output(parsed)
+            if isinstance(parsed, dict):
+                for item in parsed.get("Results", []):
+                    if isinstance(item, dict):
+                        vulnerabilities += len(item.get("Vulnerabilities", []))
         except json.JSONDecodeError:
             console.print("[red]Trivy: Failed to parse JSON output.[/red]")
     return vulnerabilities

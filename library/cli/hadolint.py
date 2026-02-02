@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import tempfile
 from pathlib import Path
 
@@ -56,8 +55,8 @@ def _emit_hadolint_json(output: str) -> int:
     """
     violations = 0
     if output:
-        parsed = json.loads(output)
-        console.print_json(json.dumps(parsed, indent=2))
+        parsed = helpers.parse_json_output(output)
+        helpers.print_json_output(parsed)
         if isinstance(parsed, list):
             violations = len(parsed)
     return violations

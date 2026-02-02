@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from library import schema
@@ -83,3 +84,24 @@ def prepare_workspace(
     console.print(f"[cyan]Preparing {label} workspace...[/cyan]")
     dockerfile_path.write_text(dockerfile_contents, encoding="utf-8")
     config_path.write_text(config_source.read_text(encoding="utf-8"), encoding="utf-8")
+
+
+def parse_json_output(output: str) -> object:
+    """Parse JSON output from a CLI tool.
+
+    Args:
+        output: JSON output string.
+
+    Returns:
+        Parsed JSON payload.
+    """
+    return json.loads(output)
+
+
+def print_json_output(payload: object) -> None:
+    """Print JSON payload with formatting.
+
+    Args:
+        payload: Parsed JSON payload.
+    """
+    console.print_json(json.dumps(payload, indent=2))
