@@ -93,15 +93,6 @@ In Git-based CI, e.g. GitHub Actions, GitLab Pipelines, the same lifecycle appli
 
 The local developer workflow and CI workflow should stay behaviorally aligned; only policy strictness and credentials differ by environment.
 
-## Out of Scope in P0
-
-The following are deferred to P1:
-
-- SLSA/provenance generation and verification workflows.
-- Remote metadata server publish integration.
-- `library search`.
-- Non-repo local directory reduced mode.
-
 ## Example Manifest Direction
 
 The manifest schema remains the central contract and is expected to evolve to better represent discovery metadata and publication intent.
