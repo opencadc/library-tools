@@ -47,10 +47,6 @@ Both. The workflow is opinionated by default, but policy is configurable.
 - Tool-level overrides are supported for backends like hadolint, trivy, and refurbish integrations.
 - CLI flags can override profile behavior for one-off runs.
 
-## Do I have to add my Dockerfile to this repository to have it built?
-
-No. The manifest points to the source repository and commit you want to build.
-
 ## Where can I run Library Tools?
 
 Current priority support is:
@@ -64,42 +60,25 @@ Non-repo local directory workflows are planned for a later phase.
 
 The manifest is canonical. During `library curate`, metadata can be explicitly imported from Dockerfile/image outputs and surfaced as patch suggestions, but canonical values are not silently replaced.
 
-## How are library images used downstream?
-
-When using CANFAR clients, `library` can be used as the default image namespace. For example, to create a new session using `images.canfar.net/library/astroml:latest`, you can run:
-
-```bash
-canfar create notebook astroml
-```
-
-```python
-from canfar.sessions import AsyncSession
-
-async with AsyncSession() as session:
-    await session.create(kind="notebook", image="astroml")
-```
-
-The clients will automatically expand the shorthand to the fully qualified image name since `images.canfar.net` is the default image registry, `library` is the default image namespace, and `latest` is the default image tag.
-
-## How do I request a new image be added to the library?
-
-The easiest way to request a new image be added to the library is to [open a new issue](https://github.com/opencadc/canfar-library/issues/new/choose) in this repository. Please select the "Request New Image" template and fill out the form. We will review your request and get back to you as soon as possible.
+Metadata is also extracted from the image build process and added to the manifest. For example, the `LABEL` instructions in the Dockerfile are extracted and added to the manifest.
 
 ## How are library images built?
 
-The library images are:
+The library images are build using the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/) tool.
 
-- Built in the GitHub Actions infrastructure to ensure consistent, secure, and reproducible builds.
-- Based on a manifest that describes the image's source, build configuration, metadata, and other information. The manifest is written in YAML and is validated against the [Library's JSON schema](https://github.com/opencadc/canfar-library/blob/main/.spec.json) to ensure correctness.
-- Built using the [Docker Buildx](https://docs.docker.com/buildx/working-with-buildx/) tool triggered by changes to the manifest in the repository.
+However, it is strongly recommended to use the GitHub Actions workflow to build images. Here are some of the reasons:
+
+- The GitHub Actions infrastructure to ensure consistent, secure, and reproducible builds.
+- The manifest is written in YAML and is validated against the [Library's JSON schema](https://github.com/opencadc/canfar-library/blob/main/.spec.json) to ensure correctness.
+- SLSA provenance is only generated when dedicated SLSA builders are used. GitHub Actions is one of the supported builders, along with Google Cloud Build, CircleCI, and GitLab CI/CD etc.
 
 ## Where are container image best practices documented?
 
 See [Container Image Best Practices](best-practices/container-images.md).
 
-## Does the library only contain astronomy software?
+## Are library tools only for astronomy software?
 
-No, while the majority of the images in the library are astronomy software, we are open to adding any software that is of interest to the astronomy community. That said, we do have a few requirements for images to be added to the library, which are evaluated on a case-by-case basis.
+No, while the library was originally created for the astronomy community, it is not limited to astronomy software. However, the library is hosted under the [Canadian Astronomy Data Centre (CADC)](https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/) and the [CANFAR Science Platform](https://www.opencadc.org/canfar/latest/) is focused on astronomy research.
 
 ## How do I contribute to the library?
 
