@@ -9,9 +9,9 @@ git:
   repo: https://github.com/opencadc/canfar-library
   commit: "1234567890123456789012345678901234567890"
 build:
-  path: images/sample
-  dockerfile: Dockerfile
-  tags:
+  context: images/sample
+  file: Dockerfile
+  tag:
     - latest
 metadata:
   name: Sample Image

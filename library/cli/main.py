@@ -7,10 +7,9 @@ from pathlib import Path
 import json
 
 import typer
-from pydantic import ValidationError
 
 from library import schema
-from library.cli import hadolint, renovate, trivy
+from library.cli import build, hadolint, renovate, trivy
 from library.utils.console import console
 
 
@@ -164,11 +163,27 @@ def validate_command(path: Path) -> None:
     console.print("[green]✅ Manifest is valid.[/green]")
 
 
+@cli.command(
+    "build",
+    help="Build a container image with buildx.",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
+def build_command(ctx: typer.Context, path: Path) -> None:
+    """Build a container image using the manifest defaults.
+
+    Args:
+        ctx: Typer context for extra args.
+        path: Path to the manifest file.
+    """
+    exit_code = build.run_build(path, list(ctx.args))
+    raise typer.Exit(exit_code)
+
+
 def main() -> None:
     """Run the CLI entrypoint."""
     try:
         cli()
-    except ValidationError as exc:
+    except Exception as exc:
         console.print(f"[red]❌ Error: {exc}[/red]")
 
 
