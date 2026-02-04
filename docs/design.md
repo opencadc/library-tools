@@ -1,66 +1,89 @@
-# CANFAR Container Library Design
+# Library Tools Design
 
 ## Summary
 
-The CANFAR Container Library defines the architecture and operating model for how container images are curated, built, and published for use with the CANFAR Science Platform. It establishes a shared approach that prioritizes predictability, reproducibility, and security while keeping the system understandable for maintainers and contributors. The CANFAR Container Library is not an application platform; it is the governance layer that standardizes how images are defined and how they evolve over time.
+Library Tools are a community-facing workflow of best practices recommendations and CLI tooling that helps scientists and developers produce high-quality containerized research software. The project focuses on reducing operational complexity for users: instead of each team independently learning container best practices, security posture, reproducibility techniques, and metadata publishing conventions, the tooling provides a guided, opinionated path with configurable policy controls.
 
-## Design Philosophy
+The design target is a single workflow that works in local development and CI environments, while preserving enough flexibility for power users to tune behavior when needed.
 
-The library favors stability over rapid churn. Updates are intended to be visible, auditable, and time-boxed. A layered model isolates OS, runtime, and science stacks so that changes can be absorbed incrementally. The goal is to reduce downstream breakage while still allowing steady evolution.
+## Intent
 
-Security is treated as a baseline expectation rather than an optional add-on. Sources are pinned, deltas are documented, and metadata supports discoverability, provenance, and supply-chain verification. The library encourages thin layers, minimal divergence from upstream, and a clear path for community contributions.
+Library Tools exists to make high-quality container delivery the default for research software:
 
-## Architecture Overview
+- Author and maintain container build definitions with a human-friendly manifest.
+- Run best-practice linting and vulnerability scanning with actionable output.
+- Modernize dependency baselines with a dedicated refurbish step.
+- Curate build, scan, and metadata artifacts into machine-ingestible metadata bundles.
+- Publish image and metadata artifacts in explicit, auditable phases.
 
-The library uses a layered container model to separate concerns and reduce churn:
+This project is no longer only a governance framework for centralized image curation. It is a user workflow product intended for scientists first, while still supporting developers and platform maintainers.
 
-- **Layer 0: OS** - Upstream OS distributions (Ubuntu LTS, Debian, Alpine, etc.) with digest pinning provide the operating system foundation.
-- **Layer 1: Runtime** - Language runtimes (e.g., Python, R, Julia) plus shared baseline packages for the community. Built and published on a monthly cadence.
-- **Layer 2: Science** - Curated science stacks built on top of the runtime layer. Maintained by the community and published on project maintainers' cadence.
+## Design Principles
 
-This layered model is designed to scale to new runtimes and science stacks without changing the governance model.
+1. **Scientist-first defaults**: workflows must be simple, explainable, and safe by default.
+2. **Manifest as contract**: manifest data is canonical for build and metadata intent.
+3. **Opinionated, not rigid**: built-in policy profiles ship with override paths.
+4. **Deterministic outputs**: commands produce structured artifacts suitable for automation.
+5. **Explicit phase boundaries**: build, curate, and push are separable to improve reliability and recovery.
 
-## Versioning, Support, and Release Cadence
+## Manifest-Driven Contract
 
-The support policy balances stability with forward motion.
+The manifest is the core system contract and source of truth.
 
-- The **OS Layer** tracks the lifecycle of the chosen upstream distribution, with transitions managed after a 3 month grace period to allow for community testing and feedback.
-- The **Runtime Images** are rebuilt monthly with refreshed pins and track the newest upstream patch release for their declared version (for example, `python:3.14` is the newest 3.14 at build time).
-- The **Science Images** are built on the user-provided version and published on the maintainer's cadence. Maintainers are **required** to pin each release to a specific commit via `git.commit`; when building from a non-default ref, the manifest must also set `git.fetch`.
+- It is human-editable YAML backed by JSON schema.
+- It is machine-actionable for CLI and CI orchestration.
+- It defines canonical metadata used for build labeling and curated outputs.
 
-Tags are not invented by the library; they are declared explicitly by maintainers in manifests. This makes ownership and intent clear and ensures that automation publishes only what maintainers approve. We strongly encourage maintainers to use either [semantic versioning](https://semver.org/) or [CalVer](https://calver.org/) for image tags. Image tags live under `build.tags`, while source pinning is expressed via `git.commit` (and `git.fetch` when non-default).
+Metadata precedence is explicit:
 
-## Manifest-Driven Model
+- Manifest metadata is canonical.
+- Metadata from Dockerfiles and Container Images metadata may be imported during curation only when explicitly requested.
+- Imported metadata is surfaced as suggestions/patches, not silent source-of-truth changes.
 
-The core unit of definition for a library image is the **manifest**. A manifest is a single, reviewable YAML artifact stored in `manifests/` and validated against the library schema (`library/schema.py`, published as `.spec.json`). It captures ownership, build source, build intent, and downstream identity.
+## Opinionated Workflow with Configurable Policy
 
-Manifests are the unit of review and the trigger for automation. They allow contributors to keep Dockerfiles in their own repositories while still participating in a shared build pipeline and policy framework.
+The default workflow is intentionally opinionated (`init -> lint -> build -> scan -> refurbish -> curate -> push`) but policy behavior is configurable.
 
-## Security, Reproducibility, and Supply Chain
+Built-in policy profiles:
 
-The library enforces reproducibility through pinned sources and explicit dependency tracking through continuous integration automation. For example, the current runtime image implementation uses digest-pinned upstream OS layers and Renovate annotations to make changes auditable over time.
+- `baseline`: scientist-friendly defaults with high-signal checks.
+- `strict`: CI/release profile with stronger policy enforcement.
+- `expert`: minimal defaults for advanced users.
 
-Provenance and metadata are considered first-class outputs. Builds automatically produce attestations, cosign signatures, software bill of materials (SBOM), and metadata suitable for downstream discovery and verification.
+Override model:
 
-## CI/CD and Delivery Model
+1. Profile defaults.
+2. Repository-level policy overrides.
+3. Tool-specific configuration overrides (e.g., hadolint, trivy, refurbish backend).
+4. Command-line flags.
 
-Automation is manifest-driven: schema validation, build/test, and publishing are triggered by manifest updates. Multi-architecture builds are a baseline expectation, with support expanding as needed.
+## Delivery Scope and Boundaries
 
-Promotion is treated as an explicit lifecycle step, for example promoting from `library/python:2026.1` to `library/python:2026.2`. The architecture requires promotion to be deterministic and auditable, with the details of replication, rollback, and credential management captured in follow-on decisions.
+### Phase 0: Local Development and CI
 
-## Governance, Lifecycle, and Open Questions
+- Contexts: local repositories and Git-based CI.
+- Commands: `library init`, `library lint`, `library build`, `library scan`, `library refurbish`, `library curate`, `library push`.
+- `library push` includes explicit phase separation:
+  - `library push image`
+  - `library push metadata`
+  - `library push all`
+- Metadata publish in P0 is file-based output (publish bundle), not metadata-server API integration.
+- `library build` supports buildx passthrough with guardrails.
 
-The library is intended to evolve into a structured community workflow with clear onboarding, maintainership, and lifecycle states (proposal, incubation, official, retired). CODEOWNERS, review policies, and contribution checklists enforce consistency without centralizing all image ownership.
+### Phase 1: Future Enhancements
 
-Open questions to be resolved via ADRs or targeted design addenda:
+- SLSA/provenance generation and verification workflows.
+- Metadata server integration for remote metadata publication.
+- `library search`.
+- Non-repo local directory mode with reduced capabilities.
 
-- Service levels and deprecation policy for curated science images.
-- Canonical platform naming across schema and manifests.
+## Architecture Outlook
 
-## Changelog
+Library Tools continues to support layered container practices (OS, runtime, science application stacks), but the primary architectural concern is now workflow composition and artifact quality across user environments.
 
-- Reframed "build definitions" and "image recipes" as **manifests**.
-- Updated paths and sources of truth (manifests in `manifests/`, schema in `library/schema.py`).
-- Aligned architecture language with current implementation details (digest pinning, Renovate annotations, pinned packages).
-- Clarified versioning rules: OS layer tracks upstream lifecycles, runtime tags refresh monthly and track upstream patches, science images follow user versions, and source pinning uses `git.commit` (plus `git.fetch` when needed).
-- Documented current open questions for follow-on decisions.
+Future additions (P1+) should preserve the same contract:
+
+- manifest-first metadata semantics,
+- policy profile model,
+- explicit phase boundaries,
+- deterministic, auditable outputs.

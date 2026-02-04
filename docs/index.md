@@ -1,12 +1,12 @@
-# CANFAR Container Library
+# Library Tools
 
-The CANFAR Container Library is a curated set of container images hosted by the [Canadian Astronomy Data Centre (CADC)](https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/) for use with the [CANFAR Science Platform](https://www.opencadc.org/canfar/latest/) and the wider astronomy community. The library provides a convenient way to access, publish, and share container images for popular astronomy software.
+Library Tools is a community-facing workflow, recommendations set, and CLI for producing high-quality containerized research software. It is designed for scientists first, while still supporting developers and power users who need stronger policy control and automation-friendly outputs.
 
-The main focus of the library is to provide:
+The goal is simple: users should not need to independently master container hardening, reproducibility workflows, metadata standards, and dependency modernization just to publish reliable research software.
 
-- Free and Open Source Software (FOSS)
-- Exemplify best practices for containerization
-- Actively rebuild for updates and security patches
-- Promote community contribution and collaboration
+## What the tools provide
 
-In essence, the library aims to help astronomers and developers build, share, and deploy reproducible, secure, and scalable scientific applications.
+- A manifest-driven contract for build and metadata intent.
+- Opinionated defaults with configurable policy profiles.
+- End-to-end CLI workflow from initialization to publish artifacts.
+- Structured outputs suitable for local use and CI integration.

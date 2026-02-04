@@ -1,114 +1,130 @@
-# Manifest Build System
+# Library Tools Technical Design
 
 ## Executive Summary
 
-The CANFAR Container Library uses a manifest-driven workflow to curate, build, and publish container images for scientific research. This technical design describes a continuous integration driven build and security system that validates upstream Dockerfiles when manifests change, enforces container best practices, and blocks PRs with critical or high vulnerabilities. The system integrates multiple vulnerability sources (Trivy, OSV, CISA KEV), supports optional image tests defined in manifests, and uses timeline-based escalation with security team oversight.
+Library Tools is a manifest-driven CLI and CI workflow for producing high-quality containerized research software. It standardizes authoring, linting, building, scanning, dependency modernization, metadata curation, and publishing into an auditable sequence that is easy for scientists to use and configurable for advanced users.
 
-## System Architecture
+## Scope
 
-### High-Level Flow
+### Phase 0 Scope: Local Development and CI
 
-1. A user curated pull request updates a manifest in `manifests/`.
-2. CI fetches the upstream Dockerfile from the referenced in the manifest.
+- Execution contexts:
+  - Local repository workflows.
+  - Git-based CI workflows.
+- Commands:
+  - `library init`
+  - `library lint`
+  - `library build`
+  - `library scan`
+  - `library refurbish`
+  - `library curate`
+  - `library push`
+- Push phase separation:
+  - `library push image`
+  - `library push metadata`
+  - `library push all`
+- Policy profiles and overrides:
+  - `baseline`, `strict`, `expert` + tool-level override support.
+- Manifest-canonical metadata model with explicit import/suggestion flow from Dockerfile/image during curation.
 
-    !!! note "Manifest Fields"
-        - `git.repo`,`git.fetch`,`git.commit`: Required to determine the repository to fetch.
-        - `build.path`, `build.dockerfile` required to determine the Dockerfile to fetch.
+### P1 Scope (Deferred)
 
-3. CI runs `hadolint` against the Dockerfile to enforce best practices checks on the Dockerfile.
-4. CI runs `renovate` to ensure the latest dependencies are used and pinned to specific versions in the Dockerfile.
-5. CI builds the image from the Dockerfile.
-6. CI runs vulnerability scanning on the image.
-7. CI runs optional `build.test` commands defined in the manifest.
-8. CI posts a detailed build report as a PR comment, tagging maintainers.
-9. Critical / high vulnerabilities block the PR until resolved.
-10. If a PR is not resolved within 4 weeks, it will be closed and marked as stale.
-11. Once the PR is merged:
+- Set policy profile
+  - `library set policy <profile>`
+  - `library get policy`
+  - `library list policy`
+- Provenance commands:
+  - `library provenance generate`
+  - `library verify`
+  - `library push provenance`
+- Metadata server integration:
+  - `library push metadata`
+  - `library search`
+- Expand `library refurbish` to support multiple additional backends (e.g. `apt`, `pip`, etc.)
+- Reduced-capability workflows for non-repo local directories.
 
-    !!! success "Post Merge Actions"
-        - Build the image for all the `build.platforms` and push with all the tags defined in `build.tags`.
-        - Generate provenance information about the build and contents; including SBOMs, attestations, and metadata.
-        - Sign the image using [cosign](https://github.com/sigstore/cosign).
-        - Push the image to container registry.
+## Command Architecture
 
-### PR Escalation Timeline
+## `library init`
 
-If a PR does not pass the CI checks, it will be blocked with a tagging the maintainers listed in the manifest.
+Creates a manifest from project context and user input, with scientist-first defaults and optional non-interactive operation for CI/bootstrap automation.
 
-!!! warning "Blocked PRs"
-    - Blocked PRs are automatically tagged with the `build:blocked` label.
-    - If a blocked PR is not resolved within 4 weeks, it will be closed and marked as stale.
+## `library lint`
 
-The security team (`@canfar/security`) provides oversight only; maintainers remain responsible for remediation.
+Runs policy checks against Dockerfile and manifest-driven expectations. Under the hood, integrates hadolint and related validation logic, while allowing config overrides.
 
-### Core Components
+## `library build`
 
-- **Manifest**: Manifest is written in YAML and validated against the [Library's JSON schema](https://github.com/opencadc/canfar-library/blob/main/.spec.json).
-- **Hadolint Configuration**: Dockerfile linting tool to enforce best practices, e.g. `--no-install-recommends`, `RUN --mount=type=cache` etc.
-- **Renovate Configuration**: Defines update cadence, release age rules, datasource policies, and digest pinning.
-- **Security Scanners**: `Trivy` for OS packages, `OSV` & `Grype` for language packages, and `CISA KEV` for exploited vulnerability prioritization.
-- **Provenance System**: Attestations are generated for each image build, including SBOMs, provenance, and metadata and signed using [cosign](https://github.com/sigstore/cosign).
-- **Notification System**: Posts PR comments with details and tags maintainers; escalates to `@canfar/security` after two weeks.
+Builds container images from manifest intent. Supports passthrough args to buildx (`-- <args>`) with guardrails that prevent overriding manifest-owned fields (for example tag/platform/file metadata controls).
 
-## Hadolint Integration
+## `library scan`
 
-Hadolint is run against the Dockerfile referenced in the manifest to enforce best practices. The CI will fail if the Dockerfile does not pass hadolint.
+Runs vulnerability analysis against target images (Trivy backend initially), with profile-controlled thresholds and optional explicit scanner config overrides.
 
-The Hadolint configuration is defined in the [`.hadolint.yaml`](https://github.com/opencadc/canfar-library/blob/main/.hadolint.yaml) file in the root of the repository. The configuration is based on the [dockerfile best practices](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/) and the [hadolint documentation](https://github.com/hadolint/hadolint/wiki). These checks include but are not limited to:
+## `library refurbish`
 
-- Digest-pinned upstream OS layer images.
-- Use of `--no-install-recommends` for apt packages.
-- Cleanup of package lists in the same layer as install.
-- Minimized layers and multi-stage build usage where applicable.
-- Renovate annotations for dependency tracking.
+Replaces `library renovate` as the dependency modernization command. Updates Dockerfile dependency references and emits structured summaries suitable for curation and review.
 
-## Renovate Bot Integration
+## `library curate`
 
-Renovate is triggered by changes to manifests in the `manifests/` directory. Alternatively, it can be triggered manually by commenting `/run renovate` in a PR.
+Assembles a coherent metadata package from:
 
-- **Update Cadence**: Monthly on the 1st of each month at 03:14 UTC.
-- **Rate limits**: 5 PRs per hour and 10 concurrent PRs.
-- **Datasource Rules**: Separate settings per datasource for extensibility.
-- **Digest pinning**: Always on for Docker images.
+- Manifest content.
+- Lint results.
+- Scan results.
+- Refurbish outputs.
+- Build outputs.
 
-The renovate configuration is defined in the [renovate.json5](https://github.com/opencadc/canfar-library/blob/main/renovate.json5) file in the root of the repository.
+Curation can explicitly import metadata hints from Dockerfile/image, but imported values become suggestions unless accepted into manifest source.
 
-### Responsibilities
+## `library push`
 
-- Update pinned dependencies for upstream images and tagged dependencies in dockerfiles.
-- Enforce digest pinning for reproducible builds.
-- Ensure minimum release ages for upstream dependencies.
-  
-    !!! note "Minimum Release Ages for Dependencies"
-        - *Patch*: 1 day
-        - *Minor*: 7 days
-        - **Major**: 30 days
+Publishes in explicit phases:
 
-- Generate structured upgrade metadata for reporting.
+- `push image`: pushes container image artifacts to configured registry targets.
+- `push metadata`: writes local publish bundles in P0.
+- `push all`: orchestrates both phases in sequence with clear partial-failure reporting.
 
-## Security Scanning Architecture
+## Data and Metadata Model
 
-### Vulnerability Sources
+## Manifest as Canonical Contract
 
-1. **Trivy** for OS packages and upstream OS layer images, using vendor advisories.
-2. **Grype / OSV** for language ecosystem dependencies (Python, JavaScript, Go, etc.).
-3. **CISA KEV** for prioritization of actively exploited vulnerabilities.
+The manifest is the source of truth for build and metadata intent. The schema remains strict and machine-validated.
 
-### Severity and Response
+Metadata precedence rules:
 
-| Severity | CVSS Range | Escalation To | PR Action |
-| --- | --- | --- | --- |
-| Critical | 9.0–10.0 | Maintainers | Blocked PR |
-| High | 7.0–8.9 | Maintainers | Blocked PR |
-| Medium | 4.0–6.9 | Maintainers | PR Warning |
-| Low | 0.1–3.9 | Maintainers | PR Warning |
+1. Manifest values are canonical.
+2. Dockerfile/image metadata may be inspected during curation only when explicitly requested.
+3. Conflicts are reported; source values are not silently replaced.
 
-## Test Command Integration
+## OCI Metadata Handling
 
-If `build.test` is present in a manifest, CI will run the following command:
+OCI keys are expected to be fully resolvable from manifest metadata. Build operations inject label/annotation values from manifest intent so generated artifacts remain consistent and auditable.
 
-```bash
-docker run --rm <built-image> <build.test>
-```
+## Policy Configuration Model
 
-If the test fails, the PR is blocked. If no test is provided, CI proceeds with warning informing the maintainer to add a test command.
+Policy is layered and transparent:
+
+1. Built-in profile defaults (`baseline`, `strict`, `expert`).
+2. Repository policy file overrides.
+3. Tool-specific config files (hadolint/trivy/refurbish backend).
+4. CLI flag overrides.
+
+Each command should emit effective policy information to reduce ambiguity and simplify debugging.
+
+## CI/CD Behavior
+
+In CI, the same command contract is used with stricter profile defaults and structured outputs for automated evaluation. The system is designed so that local workflows and CI workflows are behaviorally aligned, with policy-level differences made explicit.
+
+## Failure Handling Principles
+
+- Commands emit deterministic exit codes and machine-readable outputs.
+- Phase boundaries permit retry and recovery (`push metadata` can run independently of `push image`).
+- Tool backend failures are surfaced with actionable remediation guidance.
+- Profile and override resolution is logged to explain why checks passed/failed.
+
+## Roadmap Notes
+
+The technical model intentionally leaves SLSA/provenance and remote metadata publication as P1 to keep P0 focused on workflow quality, usability, and artifact consistency.
+
+When P1 is implemented, provenance artifacts must align with the same manifest-canonical metadata contract and preserve phase separation semantics introduced in P0.

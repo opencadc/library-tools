@@ -34,18 +34,14 @@ Configuration for building the container image.
 
 | Property | Type | Required | Possible values | Default | Description | Examples |
 | -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
-| tags | `array` | ✅ | string |  | Image tags. | ```latest```, ```1.0.0``` |
-| path | `string` |  | string | `"."` | Directory containing the Dockerfile. | ```.```, ```images/base``` |
-| dockerfile | `string` |  | string | `"Dockerfile"` | Dockerfile. | ```Dockerfile```, ```base.Dockerfile``` |
-| context | `string` |  | string | `"."` | Build context relative to path. | ```.```, ```../``` |
-| builder | `string` |  | string | `"buildkit"` | Builder backend used for this entry. | ```buildkit``` |
-| platforms | `array` |  | `linux/amd64` `linux/arm64` | `["linux/amd64"]` | Target platforms. | ```['linux/amd64']```, ```['linux/amd64', 'linux/arm64']``` |
-| args | `object` or `null` |  | object | `null` | Build-time variables. | ```{'foo': 'bar'}``` |
-| annotations | `object` or `null` |  | object | `null` | Annotations for the image. | ```{'canfar.image.runtime': 'python', 'canfar.image.type': 'runtime'}``` |
-| labels | `object` or `null` |  | object | `null` | Labels for the image. | ```{'org.opencontainers.image.description': 'Base image for CANFAR Science Platform', 'org.opencontainers.image.title': 'CANFAR Base Image'}``` |
-| target | `string` or `null` |  | string | `null` | Target stage to build. | ```runtime``` |
-| test | `string` or `null` |  | string | `null` | Test cmd to verify the image. | ```bash -c 'echo hello world'```, ```bash -c ./test.sh``` |
-| renovation | `boolean` |  | boolean | `false` | When true, canfar library will open prs to update dockerfile dependencies. | ```True```, ```False``` |
+| tag | `array` | ✅ | string |  | Image tags to apply. | ```['latest']```, ```['1.0.0', 'latest']``` |
+| context | `string` |  | string | `"."` | Path to the build context directory. | ```.```, ```images/python``` |
+| file | `string` |  | string | `"Dockerfile"` | Name of the Dockerfile in the build context. | ```Dockerfile```, ```Dockerfile.runtime``` |
+| platform | `array` |  | string | `["linux/amd64"]` | Target platforms for the build. | ```['linux/amd64']```, ```['linux/amd64', 'linux/arm64']``` |
+| labels | `object` |  | object |  | Labels applied to the built image. | ```{'org.opencontainers.image.description': 'Base image for CANFAR Science Platform', 'org.opencontainers.image.title': 'CANFAR Base Image'}``` |
+| annotations | `object` |  | object |  | Annotations applied to the built image. | ```{'canfar.image.runtime': 'python', 'canfar.image.type': 'runtime'}``` |
+| output | `string` |  | string | `"type=docker"` | Output destination (type=docker by default). | ```type=docker```, ```type=registry```, ```type=local,dest=./out``` |
+| options | `string` |  | string | `""` | Additional buildx options appended to the build command. | ```--target=runtime --push``` |
 
 ## Git
 

@@ -13,13 +13,13 @@ repo_name = "opencadc/canfar-library"
 # The site_name is shown in the page header and the browser window title
 #
 # Read more: https://zensical.org/docs/setup/basics/#site_name
-site_name = "CANFAR Library"
+site_name = "Library Tools"
 
 # The site_description is included in the HTML head and should contain a
 # meaningful description of the site content for use by search engines.
 #
 # Read more: https://zensical.org/docs/setup/basics/#site_description
-site_description = "Container Library for the CANFAR Science Platform"
+site_description = "Library Tools for CANFAR Science Platform"
 
 # The site_author attribute. This is used in the HTML head element.
 #
@@ -48,12 +48,19 @@ Copyright &copy; 2025 Canadian Astronomy Data Centre
 # Read more: https://zensical.org/docs/setup/navigation/
 nav = [
     { "Home" = "index.md" },
-    { "Design" = "design.md" },
-    { "Lifecycle" = "lifecycle.md" },
-    { "Manifest Schema" = "schema.md" },
-    { "Technical Design" = "technical-design.md" },
-    { "CLI" = "cli.md" },
-    { "FAQ" = "faq.md" }
+    { "Design" = [
+        { "Overview" = "design.md" },
+        { "Technicals" = "technical-design.md" },
+        { "Lifecycle" = "lifecycle.md" },
+        { "Manifest Schema" = "schema.md" },
+        { "CLI" = "cli.md" }
+    ] },
+    { "Best Practices" = [
+        { "Container Images" = "best-practices/container-images.md" },
+    ] },
+    {"Help" = [
+        { "FAQ" = "faq.md" },
+    ] },
 ]
 
 # With the "extra_css" option you can add your own CSS styling to customize

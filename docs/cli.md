@@ -1,6 +1,6 @@
 # CLI Tooling
 
-The `library` CLI provides commands for validating manifests, linting Dockerfiles, and running Renovate in a containerized workflow.
+The `library` CLI provides a manifest-driven workflow for building and publishing high-quality containerized research software.
 
 All commands are available through the `library` entrypoint:
 
@@ -8,40 +8,86 @@ All commands are available through the `library` entrypoint:
 library --help
 ```
 
-## `validate`
+## Command Workflow
 
-Validate a manifest against the Pydantic schema in `library/schema.py`.
+### `init`
 
-```sh
-library validate manifests/example.yml
-```
-
-## `lint`
-
-Lint a Dockerfile from a manifest or a local Dockerfile.
+Create a manifest that describes software, build intent, and metadata intent.
 
 ```bash
-library lint manifests/example.yml
-library lint --dockerfile images/python/Dockerfile
+library init
+library init --output manifests/my-image.yaml
 ```
 
-## `renovate`
+### `lint`
 
-Renovate a Dockerfile from a manifest or a local Dockerfile.
+Lint Dockerfile and manifest configuration against policy defaults or selected profile.
 
 ```bash
-library renovate manifests/example.yml
-library renovate --dockerfile images/python/Dockerfile
+library lint manifests/my-image.yaml
+library lint manifests/my-image.yaml --profile strict
 ```
 
-## Future Commands (TBD)
+### `build`
 
-```bash
-library build manifests/example.yml   # build a manifest locally
-library build --dockerfile images/python/Dockerfile
-```
+Build a container image from manifest intent. Supports buildx passthrough args via `--`.
 
 ```bash
-library update manifests/python.yaml  # update a manifest to latest commit hash
-library publish manifests/python.yaml # create a pull request with the changes to canfar-library
+library build manifests/my-image.yaml
+library build manifests/my-image.yaml -- --progress=plain
 ```
+
+### `scan`
+
+Scan a container image for vulnerabilities.
+
+```bash
+library scan images.canfar.net/library/my-image:1.0
+```
+
+### `refurbish`
+
+Modernize Dockerfile dependencies and emit structured update results.
+
+```bash
+library refurbish manifests/my-image.yaml
+```
+
+### `curate`
+
+Assemble manifest, lint, scan, and build outputs into a coherent metadata bundle.
+
+```bash
+library curate manifests/my-image.yaml --output-dir ./artifacts
+```
+
+`curate` supports explicit metadata inspection/import from Dockerfile/image inputs, while keeping manifest values canonical.
+
+### `push`
+
+Publish is phase-separated for reliability and operational clarity.
+
+```bash
+library push image manifests/my-image.yaml
+library push metadata manifests/my-image.yaml --output-dir ./publish
+library push all manifests/my-image.yaml
+```
+
+- `push image`: publish container image artifacts.
+- `push metadata`: emit metadata publish bundles (P0 file-based output).
+- `push all`: run both phases in sequence.
+
+## Policy Profiles and Overrides
+
+Built-in policy profiles:
+
+- `baseline` (scientist-friendly defaults)
+- `strict` (CI/release policy)
+- `expert` (power-user minimal baseline)
+
+Tool backends (for example hadolint, trivy, and refurbish integrations) can be overridden with user-supplied configuration.
+
+## Roadmap Notes
+
+- `library search` is planned for P1.
+- SLSA/provenance workflows and remote metadata server integration are planned for P1.

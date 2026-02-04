@@ -1,66 +1,113 @@
-# Image Lifecycle
+# Library Workflow Lifecycle
 
-Let's walk through the full lifecycle of a library image from start to finish to help you understand how the library works and how you can contribute to it.
+This document describes the lifecycle of containerized research software under the Library Tools.
 
-## Image Request
+The workflow is command-oriented and manifest-driven, designed for scientists and developers who need reproducible, secure outputs without manually stitching together container quality tooling.
 
-To request a new image be added to the library, you need to open a new issue in this repository. Please select the "Request New Image" template and fill out the form. We will review your request and get back to you as soon as possible.
-In the request issue, you will be asked to provide the following information:
+## Lifecycle Overview
 
-1. Link to the upstream project (git repository)
-2. Upstream maintainer contact information (mapped to manifest `maintainers`)
-3. Container details mapped to schema fields (image name, tags, platforms, metadata identifier/project, optional test command)
-4. Confirmation that the source is under an [OSI Approved License](https://opensource.org/licenses) and the license name (for example, MIT)
-5. Astronomy relevance and community use case
-6. Link to the manifest pull request to be reviewed and merged once the request is approved
-7. Whether the image is based on an existing runtime layer (for example, `python` or `r`); if not, explain why and note any new runtime request
-8. Confirmation that the manifest pull request passes automated integration tests
+Phase 0 Lifecycle Stages:
 
-## Image Manifest
+1. Initialize manifest (`library init`)
+2. Validate quality policy (`library lint`)
+3. Build image (`library build`)
+4. Scan vulnerabilities (`library scan`)
+5. Modernize dependencies (`library refurbish`)
+6. Curate metadata/artifacts (`library curate`)
+7. Publish in phases (`library push image`, `library push metadata`, or `library push all`)
 
-The image manifest is a YAML file that describes the image's source, build configuration, metadata, and other information. The manifest is written in YAML and is validated against the [Library's JSON schema](https://github.com/opencadc/canfar-library/blob/main/.spec.json) to ensure correctness.
+Phase 1 Lifecycle Stages:
 
-```yaml
-name: python
-maintainers:
-  - name: Shiny Brar
-    email: shiny.brar@nrc-cnrc.gc.ca
-    github: shinybrar
-git:
-  repo: https://github.com/opencadc/canfar-library
-  fetch: refs/heads/main
-  commit: 1234567890123456789012345678901234567890
-build:
-  path: images/python
-  dockerfile: Dockerfile
-  context: .
-  platforms:
-    - linux/amd64
-    - linux/arm64
-  tags:
-    - 3.12
-  labels:
-    org.opencontainers.image.title: "CANFAR Python Runtime"
-    org.opencontainers.image.description: "Python runtime for CANFAR Science Platform"
-    org.opencontainers.image.vendor: "Canadian Astronomy Data Centre"
-    org.opencontainers.image.source: "https://github.com/opencadc/canfar-library"
-    org.opencontainers.image.licenses: "AGPL-3.0"
-  annotations:
-    canfar.image.type: "runtime"
-    canfar.image.runtime: "python"
-  test: python --version
-metadata:
-  identifier: canfar-python
-  project: canfar
-```
+1. Generate SLSA provenance (`library provenance generate`)
+2. Verify SLSA provenance (`library verify`)
+3. Publish provenance to remote server (`library push provenance`)
+4. Publish metadata to remote server (`library push metadata`)
+5. Search for metadata (`library search`)
+6. Expand `library refurbish` to support multiple additional backends (e.g. `apt`, `pip`, etc.)
 
-## How are library images updated?
+## 1) Initialize Manifest
 
-1. A change gets committed to the relevant image source Git repository, for example a new version release or a bug fix.
-2. A PR to the relevant image manifest (`manifests/XXXX.yaml`) is opened in this repository to update relevant fields, typically `git.commit` (and `git.fetch` when non-default), `build.tags`, and `metadata` fields, etc.
-3. The library automation detects the change and updates the PR with a full diff of the actual `Dockerfile` changes upstream.
-4. The library automation runs a basic build test on `linux/amd64` to ensure the image builds successfully and executes `build.test` if provided.
-5. Once the PR is approved and merged, the library automation builds the image for all the platforms specified in the manifest.
-6. The build process generates provenance information about the build and image contents.
-7. The image is pushed to the `images.canfar.net/library/<image>:<tag>` and signed using [cosign](https://github.com/sigstore/cosign).
-8. The image is available for use downstream.
+`library init` creates a structured manifest that captures:
+
+- Project and maintainer identity.
+- Build source and build intent.
+- Image naming and tagging intent.
+- Discovery metadata intent.
+
+The manifest is the canonical contract for later commands.
+
+## 2) Lint and Policy Validation
+
+`library lint` evaluates manifest and Dockerfile quality against a selected policy profile:
+
+- `baseline`: default scientist-friendly profile.
+- `strict`: CI/release-oriented profile.
+- `expert`: power-user minimal baseline.
+
+Users can override defaults using repository policy files, tool-specific config files, or CLI flags.
+
+## 3) Build
+
+`library build` executes buildx-compatible image builds from manifest intent.
+
+Advanced users can pass extra buildx arguments via passthrough (`-- <args>`), while the CLI protects manifest-owned options from accidental override. e.g. `library build manifest.yaml --ssh=default` will pass the `--ssh` flag to buildx.
+
+## 4) Scan
+
+`library scan` runs vulnerability checks against target images. Results are structured for both human review and downstream curation.
+
+## 5) Refurbish (Dependency Modernization)
+
+`library refurbish` updates Dockerfile dependency references and modernization opportunities. This step replaces the previous `renovate` command naming and aligns with the broader workflow language.
+
+## 6) Curate (Metadata + Artifact Packaging)
+
+`library curate` assembles a coherent package from:
+
+- Manifest fields.
+- Lint outputs.
+- Scan outputs.
+- Refurbish outputs.
+- Build outputs.
+
+Metadata source-of-truth behavior:
+
+- Manifest remains canonical.
+- Dockerfile/image metadata import is explicit and optional.
+- Imported values are emitted as suggestions/patch proposals unless explicitly accepted.
+
+## 7) Push (Phase-Separated Publication)
+
+Publication is explicitly split to improve reliability and operational clarity:
+
+- `library push image`: push image artifacts to registry targets.
+- `library push metadata`: emit metadata publish bundles (P0 file-based output).
+- `library push provenance`: push provenance information to registry targets.
+- `library push all`: run all push commands in sequence.
+
+This phase separation enables partial retries and predictable recovery behavior.
+
+## CI Lifecycle Alignment
+
+In Git-based CI, e.g. GitHub Actions, GitLab Pipelines, the same lifecycle applies with stricter profile defaults and machine-readable outputs for automation.
+
+The local developer workflow and CI workflow should stay behaviorally aligned; only policy strictness and credentials differ by environment.
+
+## Out of Scope in P0
+
+The following are deferred to P1:
+
+- SLSA/provenance generation and verification workflows.
+- Remote metadata server publish integration.
+- `library search`.
+- Non-repo local directory reduced mode.
+
+## Example Manifest Direction
+
+The manifest schema remains the central contract and is expected to evolve to better represent discovery metadata and publication intent.
+
+Key direction for metadata semantics:
+
+- Canonical metadata is declared in manifest.
+- OCI label/annotation materialization happens during build/curation from manifest intent.
+- Dockerfile labels can be inspected and proposed back to the manifest, but do not silently replace canonical values.
