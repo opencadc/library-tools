@@ -1,6 +1,6 @@
 # Library Tools Lifecycle
 
-The workflow is command-oriented and manifest-driven, designed for scientists and developers who need reproducible, secure outputs without manually stitching together container quality tooling.
+From the perspective of a user, the lifecycle of a container image created using Library Tools is as follows:
 
 ## 1) Initialize Manifest
 

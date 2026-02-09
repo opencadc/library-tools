@@ -1,10 +1,8 @@
-# Library Tools Technical Design
-
-## Executive Summary
+# Technical Design
 
 Library Tools is a manifest-driven CLI and CI workflow for producing high-quality containerized research software. It standardizes authoring, linting, building, scanning, dependency modernization, metadata curation, and publishing into an auditable sequence that is easy for scientists to use and configurable for advanced users.
 
-## Command Architecture
+## Commands
 
 ## `library init`
 
@@ -83,9 +81,3 @@ In CI, the same command contract is used with stricter profile defaults and stru
 - Phase boundaries permit retry and recovery (`push metadata` can run independently of `push image`).
 - Tool backend failures are surfaced with actionable remediation guidance.
 - Profile and override resolution is logged to explain why checks passed/failed.
-
-## Roadmap Notes
-
-The technical model intentionally leaves SLSA/provenance and remote metadata publication as P1 to keep P0 focused on workflow quality, usability, and artifact consistency.
-
-When P1 is implemented, provenance artifacts must align with the same manifest-canonical metadata contract and preserve phase separation semantics introduced in P0.

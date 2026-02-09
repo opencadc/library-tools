@@ -50,10 +50,11 @@ nav = [
     { "Home" = "index.md" },
     { "Design" = [
         { "Overview" = "design.md" },
-        { "Technicals" = "technical-design.md" },
+        { "Technical" = "technical-design.md" },
         { "Lifecycle" = "lifecycle.md" },
+        { "Tools" = "tools.md" },
+        { "Roadmap" = "roadmap.md" },
         { "Manifest Schema" = "schema.md" },
-        { "CLI" = "cli.md" }
     ] },
     { "Best Practices" = [
         { "Container Images" = "best-practices/container-images.md" },

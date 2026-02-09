@@ -1,6 +1,9 @@
-# Library Tools Model
+# Library Tools
 
-This document explains how tool configuration works in the CANFAR Library manifest, how tool execution is normalized, and how to customize or extend tooling safely.
+!!! warning "Work in Progress"
+    This document is a work in progress. It is based on the current design and is subject to change. 
+
+This document explains how tool configuration works in the Library manifest, how tool execution is normalized, and how to customize or extend tooling safely.
 
 ## Goals
 

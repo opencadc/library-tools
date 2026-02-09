@@ -1,6 +1,6 @@
 # Library Tools Roadmap
 
-## Timeline and Dependencies
+## Dependencies
 
 - **Phase 0:** Local development + Git-based CI workflows.
 - **Phase 1:** Metadata server delivered by end of Phase 1; upstream publishing capabilities unlocked.
@@ -59,9 +59,10 @@
 - Metadata server delivered and stable.
 - End-to-end publish + search flow validated.
 
-## Phase 2: Remote Server Integration (Post‑Phase 1)
+## Phase 2: Remote Server Integration
 
-- Improve `library curate` with import/suggestion flow from Dockerfile or image during curation.
+### Policy and Provenance
+
 - Policy profile management and overrides:
   - `baseline`, `strict`, `expert` + tool-level override support.
   - `library set policy <profile>`
@@ -73,6 +74,10 @@
   - `library verify`
 - `library push` phase separation additions:
   - `library push attestations`
+
+### Quality of Life
+
+- Improve `library curate` with import/suggestion flow from Dockerfile or image during curation.
 - Remote metadata workflows:
   - `library pull` (fetch image + metadata)
   - `library diff` (compare local vs remote)
