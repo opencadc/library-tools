@@ -1,29 +1,6 @@
-# Library Workflow Lifecycle
-
-This document describes the lifecycle of containerized research software under the Library Tools.
+# Library Tools Lifecycle
 
 The workflow is command-oriented and manifest-driven, designed for scientists and developers who need reproducible, secure outputs without manually stitching together container quality tooling.
-
-## Lifecycle Overview
-
-Phase 0 Lifecycle Stages:
-
-1. Initialize manifest (`library init`)
-2. Validate quality policy (`library lint`)
-3. Build image (`library build`)
-4. Scan vulnerabilities (`library scan`)
-5. Modernize dependencies (`library refurbish`)
-6. Curate metadata/artifacts (`library curate`)
-7. Publish in phases (`library push image`, `library push metadata`, or `library push all`)
-
-Phase 1 Lifecycle Stages:
-
-1. Generate SLSA provenance (`library provenance generate`)
-2. Verify SLSA provenance (`library verify`)
-3. Publish provenance to remote server (`library push provenance`)
-4. Publish metadata to remote server (`library push metadata`)
-5. Search for metadata (`library search`)
-6. Expand `library refurbish` to support multiple additional backends (e.g. `apt`, `pip`, etc.)
 
 ## 1) Initialize Manifest
 
@@ -82,10 +59,14 @@ Publication is explicitly split to improve reliability and operational clarity:
 
 - `library push image`: push image artifacts to registry targets.
 - `library push metadata`: emit metadata publish bundles (P0 file-based output).
-- `library push provenance`: push provenance information to registry targets.
+- `library push attestations`: push provenance information to registry targets.
 - `library push all`: run all push commands in sequence.
 
 This phase separation enables partial retries and predictable recovery behavior.
+
+## 8) Search Metadata
+
+`library search` queries metadata from remote server.
 
 ## CI Lifecycle Alignment
 

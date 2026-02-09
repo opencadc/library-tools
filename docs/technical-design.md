@@ -4,45 +4,6 @@
 
 Library Tools is a manifest-driven CLI and CI workflow for producing high-quality containerized research software. It standardizes authoring, linting, building, scanning, dependency modernization, metadata curation, and publishing into an auditable sequence that is easy for scientists to use and configurable for advanced users.
 
-## Scope
-
-### Phase 0 Scope: Local Development and CI
-
-- Execution contexts:
-  - Local repository workflows.
-  - Git-based CI workflows.
-- Commands:
-  - `library init`
-  - `library lint`
-  - `library build`
-  - `library scan`
-  - `library refurbish`
-  - `library curate`
-  - `library push`
-- Push phase separation:
-  - `library push image`
-  - `library push metadata`
-  - `library push all`
-- Policy profiles and overrides:
-  - `baseline`, `strict`, `expert` + tool-level override support.
-- Manifest-canonical metadata model with explicit import/suggestion flow from Dockerfile/image during curation.
-
-### P1 Scope (Deferred)
-
-- Set policy profile
-  - `library set policy <profile>`
-  - `library get policy`
-  - `library list policy`
-- Provenance commands:
-  - `library provenance generate`
-  - `library verify`
-  - `library push provenance`
-- Metadata server integration:
-  - `library push metadata`
-  - `library search`
-- Expand `library refurbish` to support multiple additional backends (e.g. `apt`, `pip`, etc.)
-- Reduced-capability workflows for non-repo local directories.
-
 ## Command Architecture
 
 ## `library init`

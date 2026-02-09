@@ -4,50 +4,31 @@
       "additionalProperties": false,
       "description": "Configuration for building the container image.",
       "properties": {
-        "path": {
-          "default": ".",
-          "description": "Directory containing the Dockerfile.",
-          "examples": [
-            ".",
-            "images/base"
-          ],
-          "title": "Path",
-          "type": "string"
-        },
-        "dockerfile": {
-          "default": "Dockerfile",
-          "description": "Dockerfile.",
-          "examples": [
-            "Dockerfile",
-            "base.Dockerfile"
-          ],
-          "title": "Dockerfile",
-          "type": "string"
-        },
         "context": {
           "default": ".",
-          "description": "Build context relative to path.",
+          "description": "Path to the build context directory.",
           "examples": [
             ".",
-            "../"
+            "images/python"
           ],
           "title": "Build Context",
           "type": "string"
         },
-        "builder": {
-          "default": "buildkit",
-          "description": "Builder backend used for this entry.",
+        "file": {
+          "default": "Dockerfile",
+          "description": "Name of the Dockerfile in the build context.",
           "examples": [
-            "buildkit"
+            "Dockerfile",
+            "Dockerfile.runtime"
           ],
-          "title": "Build Backend",
+          "title": "Dockerfile",
           "type": "string"
         },
         "platforms": {
           "default": [
             "linux/amd64"
           ],
-          "description": "Target platforms.",
+          "description": "Target platforms for the build.",
           "examples": [
             [
               "linux/amd64"
@@ -58,140 +39,147 @@
             ]
           ],
           "items": {
-            "enum": [
-              "linux/amd64",
-              "linux/arm64"
-            ],
             "type": "string"
           },
-          "title": "Target Platforms",
+          "title": "Platforms",
           "type": "array"
         },
         "tags": {
-          "description": "Image tags.",
+          "description": "Image tags to apply.",
           "examples": [
-            "latest",
-            "1.0.0"
+            [
+              "latest"
+            ],
+            [
+              "1.0.0",
+              "latest"
+            ]
           ],
           "items": {
             "type": "string"
           },
-          "title": "Container Image Tags",
+          "minItems": 1,
+          "title": "Tags",
           "type": "array"
         },
-        "args": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Build-time variables.",
+        "output": {
+          "default": "type=docker",
+          "description": "Output destination (type=docker by default).",
           "examples": [
-            {
-              "foo": "bar"
-            }
+            "type=docker",
+            "type=registry",
+            "type=local,dest=./out"
           ],
-          "title": "Build Args"
+          "title": "Output",
+          "type": "string"
         },
-        "annotations": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Annotations for the image.",
+        "options": {
+          "default": "",
+          "description": "Additional buildx options appended to the build command.",
           "examples": [
-            {
-              "canfar.image.runtime": "python",
-              "canfar.image.type": "runtime"
-            }
+            "--target=runtime --push"
           ],
-          "title": "Image Annotations"
-        },
-        "labels": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Labels for the image.",
-          "examples": [
-            {
-              "org.opencontainers.image.description": "Base image for CANFAR Science Platform",
-              "org.opencontainers.image.title": "CANFAR Base Image"
-            }
-          ],
-          "title": "Image Labels"
-        },
-        "target": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Target stage to build.",
-          "examples": [
-            "runtime"
-          ],
-          "title": "Build Target"
-        },
-        "test": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Test cmd to verify the image.",
-          "examples": [
-            "bash -c 'echo hello world'",
-            "bash -c ./test.sh"
-          ],
-          "title": "Test Command"
-        },
-        "renovation": {
-          "default": false,
-          "description": "When true, canfar library will open prs to update dockerfile dependencies.",
-          "examples": [
-            true,
-            false
-          ],
-          "title": "Enable Renovate",
-          "type": "boolean"
+          "title": "Options",
+          "type": "string"
         }
       },
       "required": [
         "tags"
       ],
       "title": "Build",
+      "type": "object"
+    },
+    "Config": {
+      "additionalProperties": false,
+      "description": "Configuration for Library Tools execution.",
+      "properties": {
+        "policy": {
+          "$ref": "#/$defs/Policy",
+          "description": "Policy profile and controls."
+        },
+        "tools": {
+          "$ref": "#/$defs/Tools",
+          "description": "Tool configuration for Library Tools commands."
+        }
+      },
+      "title": "Config",
+      "type": "object"
+    },
+    "Discovery": {
+      "additionalProperties": false,
+      "description": "Canonical discovery metadata mapped to OCI labels/annotations.",
+      "properties": {
+        "title": {
+          "description": "Human-readable title of the image.",
+          "title": "Title",
+          "type": "string"
+        },
+        "description": {
+          "description": "Human-readable description of the software packaged in the image.",
+          "title": "Description",
+          "type": "string"
+        },
+        "source": {
+          "description": "URL to get source code for building the image",
+          "format": "uri",
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "url": {
+          "description": "URL to find more information on the image.",
+          "format": "uri",
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        },
+        "documentation": {
+          "description": "URL to get documentation on the image",
+          "format": "uri",
+          "minLength": 1,
+          "title": "Documentation",
+          "type": "string"
+        },
+        "version": {
+          "description": "Version of the packaged software.",
+          "title": "Version",
+          "type": "string"
+        },
+        "revision": {
+          "description": "Source control revision identifier for the packaged software. For example a git commit SHA.",
+          "title": "Revision",
+          "type": "string"
+        },
+        "created": {
+          "description": "Datetime on which the image was built. Conforming to RFC 3339",
+          "format": "date-time",
+          "title": "Created",
+          "type": "string"
+        },
+        "authors": {
+          "description": "Details of the people or organization responsible for the image",
+          "title": "Authors",
+          "type": "string"
+        },
+        "licenses": {
+          "description": "License(s) under which contained software is distributed as an SPDX License Expression.",
+          "title": "Licenses",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "description",
+        "source",
+        "url",
+        "documentation",
+        "version",
+        "revision",
+        "created",
+        "authors",
+        "licenses"
+      ],
+      "title": "Discovery",
       "type": "object"
     },
     "Git": {
@@ -286,77 +274,6 @@
       "additionalProperties": false,
       "description": "Metadata for the image.",
       "properties": {
-        "name": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Stylized name for the image.",
-          "examples": [
-            "Python",
-            "astroML",
-            "NumPy"
-          ],
-          "title": "Display Name"
-        },
-        "description": {
-          "anyOf": [
-            {
-              "maxLength": 255,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Short description of the image.",
-          "examples": [
-            "Python runtime for CANFAR Science Platform"
-          ],
-          "title": "Description"
-        },
-        "homepage": {
-          "anyOf": [
-            {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "URL to the homepage for the image.",
-          "examples": [
-            "https://canfar.net"
-          ],
-          "title": "Homepage"
-        },
-        "guide": {
-          "anyOf": [
-            {
-              "format": "uri",
-              "minLength": 1,
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "URL to the user guide for the image.",
-          "examples": [
-            "https://canfar.net/docs/user-guide"
-          ],
-          "title": "User Guide"
-        },
         "categories": {
           "anyOf": [
             {
@@ -398,9 +315,45 @@
             "notebook"
           ],
           "title": "Tools"
+        },
+        "discovery": {
+          "$ref": "#/$defs/Discovery",
+          "description": "Canonical discovery metadata."
         }
       },
+      "required": [
+        "discovery"
+      ],
       "title": "Metadata",
+      "type": "object"
+    },
+    "Policy": {
+      "additionalProperties": false,
+      "description": "Policy profile and enforcement configuration.",
+      "properties": {
+        "profile": {
+          "default": "baseline",
+          "description": "Policy profile for tooling behavior.",
+          "enum": [
+            "baseline",
+            "strict",
+            "expert"
+          ],
+          "title": "Profile",
+          "type": "string"
+        },
+        "conflicts": {
+          "default": "warn",
+          "description": "How to handle discovered conflicts.",
+          "enum": [
+            "warn",
+            "strict"
+          ],
+          "title": "Conflicts",
+          "type": "string"
+        }
+      },
+      "title": "Policy",
       "type": "object"
     },
     "Registry": {
@@ -408,11 +361,10 @@
       "description": "Details about the container registry.",
       "properties": {
         "host": {
-          "const": "https://images.canfar.net",
-          "default": "https://images.canfar.net",
+          "default": "images.canfar.net",
           "description": "Container registry hostname.",
           "examples": [
-            "https://docker.io"
+            "images.canfar.net"
           ],
           "title": "Hostname",
           "type": "string"
@@ -446,13 +398,154 @@
       ],
       "title": "Registry",
       "type": "object"
+    },
+    "Runner": {
+      "additionalProperties": false,
+      "description": "Docker runner configuration (P0).",
+      "properties": {
+        "kind": {
+          "const": "docker",
+          "default": "docker",
+          "description": "Runner type.",
+          "title": "Kind",
+          "type": "string"
+        },
+        "image": {
+          "description": "Container image to run.",
+          "title": "Image",
+          "type": "string"
+        },
+        "command": {
+          "description": "Command to execute in the container.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Command",
+          "type": "array"
+        },
+        "env": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Environment variables for the container.",
+          "title": "Env"
+        }
+      },
+      "required": [
+        "image",
+        "command"
+      ],
+      "title": "Runner",
+      "type": "object"
+    },
+    "Tool": {
+      "additionalProperties": false,
+      "description": "Configuration for tooling.",
+      "properties": {
+        "parser": {
+          "description": "Parser to use for the tool output.",
+          "enum": [
+            "hadolint",
+            "trivy",
+            "renovate",
+            "curate",
+            "provenance",
+            "push"
+          ],
+          "title": "Parser",
+          "type": "string"
+        },
+        "config": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Path to the tool configuration file.",
+          "title": "Config"
+        },
+        "runner": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Runner"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Runner configuration for tool execution."
+        },
+        "output": {
+          "description": "Path to write the tool output artifact.",
+          "title": "Output",
+          "type": "string"
+        }
+      },
+      "required": [
+        "parser",
+        "output"
+      ],
+      "title": "Tool",
+      "type": "object"
+    },
+    "Tools": {
+      "additionalProperties": false,
+      "description": "Fixed tool configuration set for Library Tools commands.",
+      "properties": {
+        "lint": {
+          "$ref": "#/$defs/Tool",
+          "description": "Lint command configuration."
+        },
+        "scan": {
+          "$ref": "#/$defs/Tool",
+          "description": "Scan command configuration."
+        },
+        "refurbish": {
+          "$ref": "#/$defs/Tool",
+          "description": "Refurbish command configuration."
+        },
+        "curate": {
+          "$ref": "#/$defs/Tool",
+          "description": "Curate command configuration."
+        },
+        "provenance": {
+          "$ref": "#/$defs/Tool",
+          "description": "Provenance command configuration."
+        },
+        "push": {
+          "$ref": "#/$defs/Tool",
+          "description": "Push command configuration."
+        }
+      },
+      "title": "Tools",
+      "type": "object"
     }
   },
   "$id": "https://raw.githubusercontent.com/opencadc/canfar-library/main/.spec.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Schema to capture ownership, build source, intent, and identity for library artifacts.",
+  "description": "Schema to capture build intent, discovery metadata, and tool configuration.",
   "properties": {
+    "schemaVersion": {
+      "const": 1,
+      "description": "Library manifest schema version.",
+      "title": "Schemaversion",
+      "type": "integer"
+    },
     "registry": {
       "$ref": "#/$defs/Registry",
       "description": "Image registry."
@@ -478,15 +571,21 @@
     "metadata": {
       "$ref": "#/$defs/Metadata",
       "description": "Image metadata."
+    },
+    "config": {
+      "$ref": "#/$defs/Config",
+      "description": "Tool configuration."
     }
   },
   "required": [
+    "schemaVersion",
     "registry",
     "maintainers",
     "git",
     "build",
-    "metadata"
+    "metadata",
+    "config"
   ],
-  "title": "CANFAR Container Library Schema",
+  "title": "CANFAR Library Tools Schema",
   "type": "object"
 }

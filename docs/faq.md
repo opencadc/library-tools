@@ -37,6 +37,7 @@ The default workflow is:
 
 - `library push image`
 - `library push metadata`
+- `library push attestations`
 - `library push all`
 
 ## Is this workflow opinionated or configurable?
