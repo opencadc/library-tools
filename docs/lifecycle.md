@@ -17,9 +17,9 @@ The manifest is the canonical contract for later commands.
 
 `library lint` evaluates manifest and Dockerfile quality against a selected policy profile:
 
-- `baseline`: default scientist-friendly profile.
+- `default`: default scientist-friendly profile.
 - `strict`: CI/release-oriented profile.
-- `expert`: power-user minimal baseline.
+- `expert`: power-user minimal defaults.
 
 Users can override defaults using repository policy files, tool-specific config files, or CLI flags.
 

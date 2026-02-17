@@ -64,7 +64,7 @@ OCI keys are expected to be fully resolvable from manifest metadata. Build opera
 
 Policy is layered and transparent:
 
-1. Built-in profile defaults (`baseline`, `strict`, `expert`).
+1. Built-in profile defaults (`default`, `strict`, `expert`).
 2. Repository policy file overrides.
 3. Tool-specific config files (hadolint/trivy/refurbish backend).
 4. CLI flag overrides.

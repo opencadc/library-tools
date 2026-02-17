@@ -14,8 +14,9 @@ from tests.cli.conftest import skip_if_docker_unavailable
 
 def _make_manifest(*, build: dict[str, object]) -> Manifest:
     data = {
+        "version": 1,
         "registry": {
-            "host": "https://images.canfar.net",
+            "host": "images.canfar.net",
             "project": "library",
             "image": "buildx-test",
         },
@@ -28,8 +29,28 @@ def _make_manifest(*, build: dict[str, object]) -> Manifest:
         },
         "build": build,
         "metadata": {
-            "name": "Buildx Test",
-            "description": "Buildx test image",
+            "discovery": {
+                "title": "Buildx Test",
+                "description": "Buildx test image",
+                "source": "https://github.com/opencadc/canfar-library",
+                "url": "https://images.canfar.net/library/buildx-test",
+                "documentation": "https://canfar.net/docs/user-guide",
+                "version": "1.0.0",
+                "revision": "1234567890123456789012345678901234567890",
+                "created": "2026-02-05T12:00:00Z",
+                "authors": "Build Test",
+                "licenses": "MIT",
+                "keywords": ["buildx"],
+                "domain": ["astronomy"],
+                "kind": ["headless"],
+                "tools": ["python"],
+            },
+        },
+        "config": {
+            "policy": "default",
+            "conflicts": "warn",
+            "tools": [],
+            "cli": {},
         },
     }
     return Manifest(**data)
@@ -47,10 +68,8 @@ def test_build_command_includes_core_and_options() -> None:
         build={
             "context": "/tmp/build-context",
             "file": "Dockerfile",
-            "tag": ["canfar-library/buildx-test:options"],
-            "platform": ["linux/amd64"],
-            "labels": {"org.opencontainers.image.title": "Buildx Test"},
-            "annotations": {"canfar.image.runtime": "python"},
+            "tags": ["canfar-library/buildx-test:options"],
+            "platforms": ["linux/amd64"],
             "options": "--target=runtime --push --build-arg GREETING=hello",
         }
     )
@@ -60,12 +79,12 @@ def test_build_command_includes_core_and_options() -> None:
     assert _has_pair(cmd, "--file", "/tmp/build-context/Dockerfile")
     assert _has_pair(cmd, "--tag", "canfar-library/buildx-test:options")
     assert _has_pair(cmd, "--platform", "linux/amd64")
-    assert _has_pair(cmd, "--label", "org.opencontainers.image.title=Buildx Test")
-    assert _has_pair(cmd, "--annotation", "canfar.image.runtime=python")
     assert _has_pair(cmd, "--output", "type=docker")
     assert "--target=runtime" in cmd
     assert _has_pair(cmd, "--build-arg", "GREETING=hello")
     assert "--push" in cmd
+    assert "--label" not in cmd
+    assert "--annotation" not in cmd
     assert cmd[-1] == "/tmp/build-context"
 
 
@@ -94,11 +113,13 @@ def test_build_container_image_buildx(tmp_path: Path) -> None:
         build={
             "context": str(context_dir),
             "file": "Dockerfile",
-            "tag": [tag],
-            "platform": ["linux/amd64"],
+            "tags": [tag],
+            "platforms": ["linux/amd64"],
             "options": "--build-arg GREETING=hello",
         }
     )
 
-    manifest.build_container_image()
+    cmd = manifest.build.command()
+    result = subprocess.run(cmd, check=False, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
     assert docker_utils.image_exists(tag)

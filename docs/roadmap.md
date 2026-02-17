@@ -64,7 +64,7 @@
 ### Policy and Provenance
 
 - Policy profile management and overrides:
-  - `baseline`, `strict`, `expert` + tool-level override support.
+  - `default`, `strict`, `expert` + tool-level override support.
   - `library set policy <profile>`
   - `library get policy`
   - `library list policy`

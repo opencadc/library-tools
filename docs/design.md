@@ -64,6 +64,6 @@ Default Workflow: `init -> lint -> build -> scan -> refurbish -> curate -> push 
 
 Built-in policy profiles:
 
-- `baseline`: scientist-friendly defaults with high-signal checks.
+- `default`: scientist-friendly defaults with high-signal checks.
 - `strict`: CI/release profile with stronger policy enforcement.
 - `expert`: minimal defaults for advanced users.

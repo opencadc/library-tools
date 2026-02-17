@@ -13,7 +13,7 @@ Schema to capture build intent, discovery metadata, and tool configuration.
 
 | Property | Type | Required | Possible values | Description |
 | -------- | ---- | -------- | --------------- | ----------- |
-| schemaVersion | `const` | ✅ | `1` | Library manifest schema version. |
+| version | `const` | ✅ | `1` | Library manifest schema version. |
 | registry | `object` | ✅ | [Registry](#registry) | Image registry. |
 | maintainers | `array` | ✅ | [Maintainer](#maintainer) | Image maintainers. |
 | git | `object` | ✅ | [Git](#git) | Image repository. |
@@ -45,37 +45,44 @@ Configuration for building the container image.
 
 ## Config
 
-Configuration for Library Tools execution.
+Configuration for Library Tools execution and CLI wiring.
 
 #### Type: `object`
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| policy | `object` |  | [Policy](#policy) | Policy profile and controls. |
-| tools | `object` |  | [Tools](#tools) | Tool configuration for Library Tools commands. |
+| Property | Type | Required | Possible values | Description | Examples |
+| -------- | ---- | -------- | --------------- | ----------- | -------- |
+| policy | `string` | ✅ | `default` `strict` `expert` | Policy profile for tooling behavior. |  |
+| conflicts | `string` | ✅ | `warn` `strict` | Conflict handling mode for tooling behavior. |  |
+| tools | `array` | ✅ | [Tool](#tool) | Tool definitions available to CLI steps. |  |
+| cli | `object` | ✅ | object | CLI step name to tool id mapping. | ```{'lint': 'default-linter', 'scan': 'default-scanner'}``` |
 
 ## Discovery
 
-Canonical discovery metadata mapped to OCI labels/annotations.
+Discovery metadata mapped to OCI labels/annotations.
 
 #### Type: `object`
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| title | `string` | ✅ | string | Human-readable title of the image. |
-| description | `string` | ✅ | string | Human-readable description of the software packaged in the image. |
-| source | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL to get source code for building the image |
-| url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL to find more information on the image. |
-| documentation | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | URL to get documentation on the image |
-| version | `string` | ✅ | string | Version of the packaged software. |
-| revision | `string` | ✅ | string | Source control revision identifier for the packaged software. For example a git commit SHA. |
-| created | `string` | ✅ | Format: [`date-time`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | Datetime on which the image was built. Conforming to RFC 3339 |
-| authors | `string` | ✅ | string | Details of the people or organization responsible for the image |
-| licenses | `string` | ✅ | string | License(s) under which contained software is distributed as an SPDX License Expression. |
+| Property | Type | Required | Possible values | Default | Description | Examples |
+| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| title | `string` | ✅ | string |  | Human-readable title of the image. |  |
+| description | `string` | ✅ | string |  | Human-readable description of the software packaged in the image. |  |
+| source | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to get source code for building the image |  |
+| url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to find more information on the image. |  |
+| documentation | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to get documentation on the image |  |
+| version | `string` | ✅ | string |  | Version of the packaged software. |  |
+| revision | `string` | ✅ | string |  | Source control revision identifier for the packaged software. For example a git commit SHA. |  |
+| created | `string` | ✅ | Format: [`date-time`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | Datetime on which the image was built. Conforming to RFC 3339 |  |
+| authors | `string` | ✅ | string |  | Details of the people or organization responsible for the image |  |
+| licenses | `string` | ✅ | string |  | License(s) under which contained software is distributed as an SPDX License Expression. |  |
+| domain | `array` | ✅ | string |  | Scientific domains supported by this image. | ```['astronomy']```, ```['astronomy', 'scientific-computing']``` |
+| kind | `array` | ✅ | `notebook` `headless` `carta` `firefly` `contributed` |  | Discovery kinds that classify this image. | ```['headless']```, ```['notebook', 'headless']``` |
+| keywords | `array` |  | string |  | Keywords used to support software discovery and search. | ```astronomy```, ```analysis```, ```python``` |
+| tools | `array` |  | string |  | Common tools included in the image. | ```python```, ```jupyterlab```, ```astropy``` |
+| deprecated | `boolean` |  | boolean | `false` | Whether this image is deprecated and should no longer be used. |  |
 
 ## Git
 
@@ -114,24 +121,9 @@ Metadata for the image.
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Default | Description | Examples |
-| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
-| discovery | `object` | ✅ | [Discovery](#discovery) |  | Canonical discovery metadata. |  |
-| categories | `array` or `null` |  | string | `null` | Categories for the image. | ```development```, ```science```, ```astronomy``` |
-| tools | `array` or `null` |  | string | `null` | Tools provided by the image. | ```python```, ```jupyter```, ```notebook``` |
-
-## Policy
-
-Policy profile and enforcement configuration.
-
-#### Type: `object`
-
-> ⚠️ Additional properties are not allowed.
-
-| Property | Type | Required | Possible values | Default | Description |
-| -------- | ---- | -------- | --------------- | ------- | ----------- |
-| profile | `string` |  | `baseline` `strict` `expert` | `"baseline"` | Policy profile for tooling behavior. |
-| conflicts | `string` |  | `warn` `strict` | `"warn"` | How to handle discovered conflicts. |
+| Property | Type | Required | Possible values | Description |
+| -------- | ---- | -------- | --------------- | ----------- |
+| discovery | `object` | ✅ | [Discovery](#discovery) | Canonical discovery metadata. |
 
 ## Registry
 
@@ -143,53 +135,38 @@ Details about the container registry.
 
 | Property | Type | Required | Possible values | Default | Description | Examples |
 | -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| project | `string` | ✅ | string |  | Container registry project. | ```skaha``` |
 | image | `string` | ✅ | string |  | Container image name. | ```python```, ```base``` |
 | host | `string` |  | string | `"images.canfar.net"` | Container registry hostname. | ```images.canfar.net``` |
-| project | `string` |  | `library` `srcnet` `skaha` | `"library"` | Container registry namespace. | ```skaha``` |
-
-## Runner
-
-Docker runner configuration (P0).
-
-#### Type: `object`
-
-> ⚠️ Additional properties are not allowed.
-
-| Property | Type | Required | Possible values | Default | Description |
-| -------- | ---- | -------- | --------------- | ------- | ----------- |
-| image | `string` | ✅ | string |  | Container image to run. |
-| command | `array` | ✅ | string |  | Command to execute in the container. |
-| kind | `const` |  | `docker` | `"docker"` | Runner type. |
-| env | `object` or `null` |  | object | `null` | Environment variables for the container. |
 
 ## Tool
 
-Configuration for tooling.
+Generic docker tool definition.
 
 #### Type: `object`
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Default | Description |
-| -------- | ---- | -------- | --------------- | ------- | ----------- |
-| parser | `string` | ✅ | `hadolint` `trivy` `renovate` `curate` `provenance` `push` |  | Parser to use for the tool output. |
-| output | `string` | ✅ | string |  | Path to write the tool output artifact. |
-| config | `string` or `null` |  | string | `null` | Path to the tool configuration file. |
-| runner | `object` or `null` |  | [Runner](#runner) | `null` | Runner configuration for tool execution. |
+| Property | Type | Required | Possible values | Default | Description | Examples |
+| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| id | `string` | ✅ | [`^[a-zA-Z0-9][a-zA-Z0-9._-]*$`](https://regex101.com/?regex=%5E%5Ba-zA-Z0-9%5D%5Ba-zA-Z0-9._-%5D%2A%24) |  | Unique tool identifier. | ```default-scanner```, ```srcnet-scanner``` |
+| parser | `string` | ✅ | `hadolint` `trivy` `renovate` `curate` `provenance` `push` |  | Built-in parser used to consume the tool JSON outputs. | ```trivy```, ```hadolint``` |
+| image | `string` | ✅ | string |  | Container image to run the tool in. | ```docker.io/aquasec/trivy:latest``` |
+| command | `array` | ✅ | string |  | Tokenized command argv executed in the tool container. Supported tokens: {{inputs.<key>}} and {{image.reference}}. | ```['trivy', 'image', '--config', '{{inputs.trivy}}', '--format', 'json', '--output', '/outputs/report.json', '{{image.reference}}']``` |
+| env | `object` |  | object |  | Environment variables passed to the tool container. |  |
+| inputs | `object` |  | [ToolInputs](#toolinputs) |  | Tool inputs mounted into the tool container. |  |
+| socket | `boolean` |  | boolean | `false` | Whether /var/run/docker.sock is mounted into the tool container. |  |
+| outputs | `const` |  | `/outputs/` | `"/outputs/"` | Fixed container directory where tools must write outputs. | ```/outputs/``` |
 
-## Tools
+## ToolInputs
 
-Fixed tool configuration set for Library Tools commands.
+Named tool inputs resolved by CLI into deterministic mounts.
 
 #### Type: `object`
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| lint | `object` |  | [Tool](#tool) | Lint command configuration. |
-| scan | `object` |  | [Tool](#tool) | Scan command configuration. |
-| refurbish | `object` |  | [Tool](#tool) | Refurbish command configuration. |
-| curate | `object` |  | [Tool](#tool) | Curate command configuration. |
-| provenance | `object` |  | [Tool](#tool) | Provenance command configuration. |
-| push | `object` |  | [Tool](#tool) | Push command configuration. |
+| Property | Type | Required | Possible values | Default | Description | Examples |
+| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| source | `const` or `string` |  | Format: [`file-path`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) and/or `default` | `"default"` | Input source for the tool. 'default' maps to built-in config shipped with the library; otherwise provide a local file path. | ```default```, ```./ci/.trivy.yaml``` |
+| destination | `string` |  | string | `"/config.yaml"` | Absolute path in the tool container where the input is mounted. | ```/config.yaml```, ```/workspace/config/trivy.yaml``` |

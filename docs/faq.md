@@ -44,7 +44,7 @@ The default workflow is:
 
 Both. The workflow is opinionated by default, but policy is configurable.
 
-- Built-in profiles: `baseline`, `strict`, `expert`.
+- Built-in profiles: `default`, `strict`, `expert`.
 - Tool-level overrides are supported for backends like hadolint, trivy, and refurbish integrations.
 - CLI flags can override profile behavior for one-off runs.
 

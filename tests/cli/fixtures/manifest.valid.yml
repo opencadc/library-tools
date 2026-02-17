@@ -1,5 +1,6 @@
+version: 1
 registry:
-  host: https://images.canfar.net
+  host: images.canfar.net
   project: library
   image: sample-image
 maintainers:
@@ -11,8 +12,28 @@ git:
 build:
   context: images/sample
   file: Dockerfile
-  tag:
+  tags:
     - latest
 metadata:
-  name: Sample Image
-  description: Sample description for testing.
+  discovery:
+    title: Sample Image
+    description: Sample description for testing.
+    source: https://github.com/opencadc/canfar-library
+    url: https://images.canfar.net/library/sample-image
+    documentation: https://canfar.net/docs/user-guide
+    version: "1.0.0"
+    revision: "1234567890123456789012345678901234567890"
+    created: "2026-02-05T12:00:00Z"
+    authors: Example Maintainer
+    licenses: MIT
+    keywords:
+      - sample
+      - testing
+    domain:
+      - astronomy
+    kind:
+      - headless
+    tools:
+      - python
+      - jupyter
+config: {}

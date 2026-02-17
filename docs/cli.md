@@ -81,9 +81,9 @@ library push all manifests/my-image.yaml
 
 Built-in policy profiles:
 
-- `baseline` (scientist-friendly defaults)
+- `default` (scientist-friendly defaults)
 - `strict` (CI/release policy)
-- `expert` (power-user minimal baseline)
+- `expert` (power-user minimal defaults)
 
 Tool backends (for example hadolint, trivy, and refurbish integrations) can be overridden with user-supplied configuration.
 

@@ -1,203 +1,191 @@
 # Library Tools
 
-!!! warning "Work in Progress"
-    This document is a work in progress. It is based on the current design and is subject to change. 
-
-This document explains how tool configuration works in the Library manifest, how tool execution is normalized, and how to customize or extend tooling safely.
+This document defines the developer contract for tool configuration in `config`.
 
 ## Goals
 
-- Provide a single, opinionated workflow that is still configurable for power users.
-- Keep tooling consistent across local runs and CI/CD.
-- Make tool outputs machine-parseable and auditable.
-- Minimize per-tool special cases by standardizing execution.
+- Keep the schema simple and explicit.
+- Run every tool in Docker.
+- Require tools to write one or more JSON outputs into `/outputs/`.
+- Support built-in defaults and local user overrides for tool inputs.
 
-## Concepts
+## Config Shape
 
-### Tools (config.tools)
+Tool configuration is flattened under `config`:
 
-Each CLI command maps to a tool configuration in the manifest under `config.tools`:
+- `config.policy`
+- `config.conflicts`
+- `config.tools`
+- `config.cli`
 
-- `library lint` -> `config.tools.lint`
-- `library scan` -> `config.tools.scan`
-- `library refurbish` -> `config.tools.refurbish`
-- `library curate` -> `config.tools.curate`
-- `library provenance` -> `config.tools.provenance`
-- `library push` -> `config.tools.push`
+## Config Fields
 
-Each tool configuration includes:
+### `config.policy`
 
-- `parser`: which built-in parser to use for the JSON output.
-- `config` (optional): host path to a tool config file.
-- `runner` (optional): inline runner configuration.
-- `output`: host path where the tool writes JSON output.
+Policy profile:
 
-### Parsers
+- `default`
+- `strict`
+- `expert`
 
-Parsers are built-in, name-locked implementations.
+### `config.conflicts`
 
-Current parser options:
+Conflict handling behavior:
 
-- `hadolint`
-- `trivy`
-- `renovate`
-- `curate`
-- `provenance`
-- `push`
+- `warn`
+- `strict`
 
-If you need a new parser, it should be implemented in the library (e.g., `library.parsers.<name>`) and then added to the schema enum.
+### `config.tools`
 
-### Runners
+List of tool definitions. Each tool entry has:
 
-Runners describe how to execute a tool. In P0 we support Docker-only runners.
+- `id`: unique tool id.
+- `parser`: built-in parser name.
+- `image`: Docker image used for execution.
+- `command`: tokenized argv command.
+- `env`: environment variables for the tool container.
+- `inputs`: named input mapping (`ToolInputs`).
+- `socket`: whether `/var/run/docker.sock` is mounted.
+- `outputs`: fixed literal `/outputs/`.
 
-Runners are embedded directly in each tool configuration via `config.tools.<tool>.runner`.
+### `config.cli`
 
-## Fixed Workspace Contract
+Dictionary mapping CLI command names to tool ids.
 
-All tools run in a standardized workspace. The CLI is responsible for preparing the workspace and wiring paths into the container.
+Example:
 
-Inside the tool container:
+- `scan: default-scanner`
+- `lint: default-linter`
 
-- `/workspace/src` is the project working directory, usually mapped to the `.`.
-- `/workspace/tool-config.yaml` is the tool configuration file provided via `--config` or `config`.
-- `/workspace/tool-output.json` is the output file target corresponding to `output`.
+Validation rules:
 
-This contract eliminates tool-by-tool mount configuration. Tool runners should always reference these paths.
+- every tool id in `config.tools` must be unique.
+- every `config.cli` target must reference an existing tool id.
 
-## Tool Output Contract
+## ToolInputs
 
-Every tool must write a JSON file to `output` on the host. The CLI copies this to `/workspace/tool-output.json` inside the container and parses it after execution.
+Each `tools[].inputs.<key>` entry contains:
 
-## Defaults
+- `source`: either:
+  - `default` for packaged built-in config
+  - a local file path
+- `destination`: absolute path inside the container where input is mounted
 
-If you do not specify tool configurations, the schema supplies defaults for each tool (including default output locations). You can override any field explicitly.
+## Runtime Contract
 
-Default output paths:
+1. Every tool runs in Docker.
+2. Container outputs path is fixed: `/outputs/`.
+3. Host run workspace is deterministic:
+   - `./outputs/{tool-id}/{DATETIME}/`
+4. Host run workspace is always mounted into container as `/outputs`.
+5. All tool outputs are written to `/outputs/*` inside the container.
+6. `inputs` are resolved and mounted at `destination`.
 
-- `lint` -> `./artifacts/lint.json`
-- `scan` -> `./artifacts/scan.json`
-- `refurbish` -> `./artifacts/refurbish.json`
-- `curate` -> `./artifacts/curate.json`
-- `provenance` -> `./artifacts/provenance.json`
-- `push` -> `./artifacts/push.json`
+## Variables and Source of Truth
 
-## Examples
+| Variable | Example | Source |
+| --- | --- | --- |
+| `tool.id` | `default-scanner` | `config.tools[]` |
+| `tool.image` | `docker.io/aquasec/trivy:latest` | `config.tools[]` |
+| `tool.command` | `["trivy", "image", ...]` | `config.tools[]` |
+| `tool.inputs.<key>.source` | `default` or `./ci/trivy.yaml` | `config.tools[]` |
+| `tool.inputs.<key>.destination` | `/config/trivy.yaml` | `config.tools[]` |
+| `tool.socket` | `true` | `config.tools[]` |
+| `tool.outputs` | `/outputs/` | `config.tools[]` (fixed literal) |
+| `image.reference` | `docker.io/library/alpine:3.19` | CLI runtime |
+| `DATETIME` | `20260217T213015Z` | CLI runtime clock |
 
-### Minimal tool config (accept defaults)
+## Supported Command Tokens
 
-```yaml
-config: {}
-```
+The schema validates these tokens in `tool.command`:
 
-### Lint with a custom hadolint config
+- `{{inputs.<key>}}`
+- `{{image.reference}}`
+
+Examples:
+
+- `{{inputs.trivy}}` -> value from `inputs.trivy.destination`
+- `{{image.reference}}` -> runtime image reference value
+
+## Complete Lifecycle
+
+1. CLI command (for example `scan`) is resolved through `config.cli` to a tool id.
+2. CLI loads the matching tool from `config.tools`.
+3. CLI computes run directory:
+   - `./outputs/{tool-id}/{DATETIME}/`
+4. CLI creates that run directory.
+5. CLI resolves each input source:
+   - `default` -> packaged config in the library
+   - file path -> local override
+6. CLI mounts each resolved input to its `destination` (read-only).
+7. CLI mounts host run directory to container `/outputs` (read-write).
+8. CLI mounts Docker socket if `socket=true`.
+9. CLI renders command tokens and runs the tool container.
+10. Tool writes one or more JSON files into `/outputs/`.
+11. JSON artifacts are available on host under `./outputs/{tool-id}/{DATETIME}/`.
+12. Parser selected by `tool.parser` consumes outputs for result reporting.
+
+## Minimal Example
 
 ```yaml
 config:
+  policy: default
+  conflicts: warn
   tools:
-    lint:
-      parser: hadolint
-      config: ./ci/hadolint.yaml
-      output: ./artifacts/lint.json
-      runner:
-        kind: docker
-        image: docker.io/hadolint/hadolint:latest
-        command:
-          - hadolint
-          - --format
-          - json
-          - --config
-          - /workspace/tool-config.yaml
-          - /workspace/src/Dockerfile
-```
-
-### Scan with Trivy (image scan)
-
-```yaml
-config:
-  tools:
-    scan:
+    - id: default-scanner
       parser: trivy
-      output: ./artifacts/scan.json
-      runner:
-        kind: docker
-        image: docker.io/aquasec/trivy:latest
-        command:
-          - trivy
-          - image
-          - --format
-          - json
-          - --output
-          - /workspace/tool-output.json
-          - --config
-          - /workspace/tool-config.yaml
-          # The CLI injects the image reference for the current build.
+      image: docker.io/aquasec/trivy:latest
+      command:
+        - trivy
+        - image
+        - --config
+        - "{{inputs.trivy}}"
+        - --format
+        - json
+        - --output
+        - /outputs/scan.json
+        - "{{image.reference}}"
+      inputs:
+        trivy:
+          source: default
+          destination: /config/trivy.yaml
+      socket: true
+      outputs: /outputs/
+  cli:
+    scan: default-scanner
 ```
 
-### Refurbish with Renovate
+## Advanced Example
 
 ```yaml
 config:
+  policy: strict
+  conflicts: strict
   tools:
-    refurbish:
-      parser: renovate
-      config: ./renovate.json5
-      output: ./artifacts/refurbish.json
-      runner:
-        kind: docker
-        image: renovate/renovate:latest
-        command:
-          - renovate
-          - --platform
-          - local
-          - --config-file
-          - /workspace/tool-config.yaml
+    - id: srcnet-scanner
+      parser: trivy
+      image: docker.io/aquasec/trivy:latest
+      env:
+        TRIVY_CACHE_DIR: /tmp/trivy-cache
+      command:
+        - trivy
+        - image
+        - --config
+        - "{{inputs.trivy}}"
+        - --format
+        - json
+        - --output
+        - /outputs/scan.json
+        - "{{image.reference}}"
+      inputs:
+        trivy:
+          source: ./ci/trivy-srcnet.yaml
+          destination: /config/trivy.yaml
+        policy:
+          source: ./ci/policy.yaml
+          destination: /config/policy.yaml
+      socket: true
+      outputs: /outputs/
+  cli:
+    scan: srcnet-scanner
 ```
-
-### Curate and Provenance (built-in Python tools)
-
-Curate and provenance can run without a Docker runner. If `runner` is omitted, the CLI uses the built-in Python implementation.
-
-```yaml
-config:
-  tools:
-    curate:
-      parser: curate
-      output: ./artifacts/curate.json
-
-    provenance:
-      parser: provenance
-      output: ./artifacts/provenance.json
-```
-
-### Push (built-in Python tool)
-
-Push behavior is configured by the tool config file (not the manifest). If you need to change push behavior, point `config` at a custom config file.
-
-```yaml
-config:
-  tools:
-    push:
-      parser: push
-      config: ./ci/push.yaml
-      output: ./artifacts/push.json
-```
-
-## CLI Overrides
-
-CLI flags override manifest settings:
-
-- `--config` overrides `config`.
-- `--output` overrides `output`.
-
-The CLI always stages these into `/workspace/tool-config.yaml` and `/workspace/tool-output.json` before executing the runner.
-
-## Custom Tools
-
-If you want to add a new tool:
-
-1. Implement a parser in the library (`library.parsers.<name>`).
-2. Add the parser name to the `Tool.parser` enum in the schema.
-3. Define the tool configuration under `config.tools.<tool>` and provide a runner or built-in implementation.
-
-This keeps the manifest stable while allowing extension via code.

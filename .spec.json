@@ -91,23 +91,62 @@
     },
     "Config": {
       "additionalProperties": false,
-      "description": "Configuration for Library Tools execution.",
+      "description": "Configuration for Library Tools execution and CLI wiring.",
       "properties": {
         "policy": {
-          "$ref": "#/$defs/Policy",
-          "description": "Policy profile and controls."
+          "description": "Policy profile for tooling behavior.",
+          "enum": [
+            "default",
+            "strict",
+            "expert"
+          ],
+          "title": "Policy",
+          "type": "string"
+        },
+        "conflicts": {
+          "description": "Conflict handling mode for tooling behavior.",
+          "enum": [
+            "warn",
+            "strict"
+          ],
+          "title": "Conflicts",
+          "type": "string"
         },
         "tools": {
-          "$ref": "#/$defs/Tools",
-          "description": "Tool configuration for Library Tools commands."
+          "description": "Tool definitions available to CLI steps.",
+          "items": {
+            "$ref": "#/$defs/Tool"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "cli": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "CLI step name to tool id mapping.",
+          "examples": [
+            {
+              "lint": "default-linter",
+              "scan": "default-scanner"
+            }
+          ],
+          "title": "Cli",
+          "type": "object"
         }
       },
+      "required": [
+        "policy",
+        "conflicts",
+        "tools",
+        "cli"
+      ],
       "title": "Config",
       "type": "object"
     },
     "Discovery": {
       "additionalProperties": false,
-      "description": "Canonical discovery metadata mapped to OCI labels/annotations.",
+      "description": "Discovery metadata mapped to OCI labels/annotations.",
       "properties": {
         "title": {
           "description": "Human-readable title of the image.",
@@ -165,6 +204,81 @@
           "description": "License(s) under which contained software is distributed as an SPDX License Expression.",
           "title": "Licenses",
           "type": "string"
+        },
+        "keywords": {
+          "description": "Keywords used to support software discovery and search.",
+          "examples": [
+            "astronomy",
+            "analysis",
+            "python"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Keywords",
+          "type": "array"
+        },
+        "domain": {
+          "description": "Scientific domains supported by this image.",
+          "examples": [
+            [
+              "astronomy"
+            ],
+            [
+              "astronomy",
+              "scientific-computing"
+            ]
+          ],
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Domain",
+          "type": "array"
+        },
+        "kind": {
+          "description": "Discovery kinds that classify this image.",
+          "examples": [
+            [
+              "headless"
+            ],
+            [
+              "notebook",
+              "headless"
+            ]
+          ],
+          "items": {
+            "enum": [
+              "notebook",
+              "headless",
+              "carta",
+              "firefly",
+              "contributed"
+            ],
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Kind",
+          "type": "array"
+        },
+        "tools": {
+          "description": "Common tools included in the image.",
+          "examples": [
+            "python",
+            "jupyterlab",
+            "astropy"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tools",
+          "type": "array"
+        },
+        "deprecated": {
+          "default": false,
+          "description": "Whether this image is deprecated and should no longer be used.",
+          "title": "Deprecated",
+          "type": "boolean"
         }
       },
       "required": [
@@ -177,7 +291,9 @@
         "revision",
         "created",
         "authors",
-        "licenses"
+        "licenses",
+        "domain",
+        "kind"
       ],
       "title": "Discovery",
       "type": "object"
@@ -274,48 +390,6 @@
       "additionalProperties": false,
       "description": "Metadata for the image.",
       "properties": {
-        "categories": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Categories for the image.",
-          "examples": [
-            "development",
-            "science",
-            "astronomy"
-          ],
-          "title": "Categories"
-        },
-        "tools": {
-          "anyOf": [
-            {
-              "items": {
-                "type": "string"
-              },
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Tools provided by the image.",
-          "examples": [
-            "python",
-            "jupyter",
-            "notebook"
-          ],
-          "title": "Tools"
-        },
         "discovery": {
           "$ref": "#/$defs/Discovery",
           "description": "Canonical discovery metadata."
@@ -325,35 +399,6 @@
         "discovery"
       ],
       "title": "Metadata",
-      "type": "object"
-    },
-    "Policy": {
-      "additionalProperties": false,
-      "description": "Policy profile and enforcement configuration.",
-      "properties": {
-        "profile": {
-          "default": "baseline",
-          "description": "Policy profile for tooling behavior.",
-          "enum": [
-            "baseline",
-            "strict",
-            "expert"
-          ],
-          "title": "Profile",
-          "type": "string"
-        },
-        "conflicts": {
-          "default": "warn",
-          "description": "How to handle discovered conflicts.",
-          "enum": [
-            "warn",
-            "strict"
-          ],
-          "title": "Conflicts",
-          "type": "string"
-        }
-      },
-      "title": "Policy",
       "type": "object"
     },
     "Registry": {
@@ -370,13 +415,7 @@
           "type": "string"
         },
         "project": {
-          "default": "library",
-          "description": "Container registry namespace.",
-          "enum": [
-            "library",
-            "srcnet",
-            "skaha"
-          ],
+          "description": "Container registry project.",
           "examples": [
             "skaha"
           ],
@@ -394,65 +433,28 @@
         }
       },
       "required": [
+        "project",
         "image"
       ],
       "title": "Registry",
       "type": "object"
     },
-    "Runner": {
-      "additionalProperties": false,
-      "description": "Docker runner configuration (P0).",
-      "properties": {
-        "kind": {
-          "const": "docker",
-          "default": "docker",
-          "description": "Runner type.",
-          "title": "Kind",
-          "type": "string"
-        },
-        "image": {
-          "description": "Container image to run.",
-          "title": "Image",
-          "type": "string"
-        },
-        "command": {
-          "description": "Command to execute in the container.",
-          "items": {
-            "type": "string"
-          },
-          "title": "Command",
-          "type": "array"
-        },
-        "env": {
-          "anyOf": [
-            {
-              "additionalProperties": {
-                "type": "string"
-              },
-              "type": "object"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "Environment variables for the container.",
-          "title": "Env"
-        }
-      },
-      "required": [
-        "image",
-        "command"
-      ],
-      "title": "Runner",
-      "type": "object"
-    },
     "Tool": {
       "additionalProperties": false,
-      "description": "Configuration for tooling.",
+      "description": "Generic docker tool definition.",
       "properties": {
+        "id": {
+          "description": "Unique tool identifier.",
+          "examples": [
+            "default-scanner",
+            "srcnet-scanner"
+          ],
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$",
+          "title": "ID",
+          "type": "string"
+        },
         "parser": {
-          "description": "Parser to use for the tool output.",
+          "description": "Built-in parser used to consume the tool JSON outputs.",
           "enum": [
             "hadolint",
             "trivy",
@@ -461,77 +463,120 @@
             "provenance",
             "push"
           ],
+          "examples": [
+            "trivy",
+            "hadolint"
+          ],
           "title": "Parser",
           "type": "string"
         },
-        "config": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
+        "image": {
+          "description": "Container image to run the tool in.",
+          "examples": [
+            "docker.io/aquasec/trivy:latest"
           ],
-          "default": null,
-          "description": "Path to the tool configuration file.",
-          "title": "Config"
+          "title": "Image",
+          "type": "string"
         },
-        "runner": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/Runner"
-            },
-            {
-              "type": "null"
-            }
+        "command": {
+          "description": "Tokenized command argv executed in the tool container. Supported tokens: {{inputs.<key>}} and {{image.reference}}.",
+          "examples": [
+            [
+              "trivy",
+              "image",
+              "--config",
+              "{{inputs.trivy}}",
+              "--format",
+              "json",
+              "--output",
+              "/outputs/report.json",
+              "{{image.reference}}"
+            ]
           ],
-          "default": null,
-          "description": "Runner configuration for tool execution."
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Command",
+          "type": "array"
         },
-        "output": {
-          "description": "Path to write the tool output artifact.",
-          "title": "Output",
+        "env": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Environment variables passed to the tool container.",
+          "title": "Environment",
+          "type": "object"
+        },
+        "inputs": {
+          "additionalProperties": {
+            "$ref": "#/$defs/ToolInputs"
+          },
+          "description": "Tool inputs mounted into the tool container.",
+          "title": "Inputs",
+          "type": "object"
+        },
+        "socket": {
+          "default": false,
+          "description": "Whether /var/run/docker.sock is mounted into the tool container.",
+          "title": "Docker Socket",
+          "type": "boolean"
+        },
+        "outputs": {
+          "const": "/outputs/",
+          "default": "/outputs/",
+          "description": "Fixed container directory where tools must write outputs.",
+          "examples": [
+            "/outputs/"
+          ],
+          "title": "Outputs",
           "type": "string"
         }
       },
       "required": [
+        "id",
         "parser",
-        "output"
+        "image",
+        "command"
       ],
       "title": "Tool",
       "type": "object"
     },
-    "Tools": {
+    "ToolInputs": {
       "additionalProperties": false,
-      "description": "Fixed tool configuration set for Library Tools commands.",
+      "description": "Named tool inputs resolved by CLI into deterministic mounts.",
       "properties": {
-        "lint": {
-          "$ref": "#/$defs/Tool",
-          "description": "Lint command configuration."
+        "source": {
+          "anyOf": [
+            {
+              "const": "default",
+              "type": "string"
+            },
+            {
+              "format": "file-path",
+              "type": "string"
+            }
+          ],
+          "default": "default",
+          "description": "Input source for the tool. 'default' maps to built-in config shipped with the library; otherwise provide a local file path.",
+          "examples": [
+            "default",
+            "./ci/.trivy.yaml"
+          ],
+          "title": "Source"
         },
-        "scan": {
-          "$ref": "#/$defs/Tool",
-          "description": "Scan command configuration."
-        },
-        "refurbish": {
-          "$ref": "#/$defs/Tool",
-          "description": "Refurbish command configuration."
-        },
-        "curate": {
-          "$ref": "#/$defs/Tool",
-          "description": "Curate command configuration."
-        },
-        "provenance": {
-          "$ref": "#/$defs/Tool",
-          "description": "Provenance command configuration."
-        },
-        "push": {
-          "$ref": "#/$defs/Tool",
-          "description": "Push command configuration."
+        "destination": {
+          "default": "/config.yaml",
+          "description": "Absolute path in the tool container where the input is mounted.",
+          "examples": [
+            "/config.yaml",
+            "/workspace/config/trivy.yaml"
+          ],
+          "title": "Destination",
+          "type": "string"
         }
       },
-      "title": "Tools",
+      "title": "ToolInputs",
       "type": "object"
     }
   },
@@ -540,10 +585,10 @@
   "additionalProperties": false,
   "description": "Schema to capture build intent, discovery metadata, and tool configuration.",
   "properties": {
-    "schemaVersion": {
+    "version": {
       "const": 1,
       "description": "Library manifest schema version.",
-      "title": "Schemaversion",
+      "title": "Version",
       "type": "integer"
     },
     "registry": {
@@ -578,7 +623,7 @@
     }
   },
   "required": [
-    "schemaVersion",
+    "version",
     "registry",
     "maintainers",
     "git",
