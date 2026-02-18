@@ -94,6 +94,7 @@
       "description": "Configuration for Library Tools execution and CLI wiring.",
       "properties": {
         "policy": {
+          "default": "default",
           "description": "Policy profile for tooling behavior.",
           "enum": [
             "default",
@@ -104,6 +105,7 @@
           "type": "string"
         },
         "conflicts": {
+          "default": "warn",
           "description": "Conflict handling mode for tooling behavior.",
           "enum": [
             "warn",
@@ -136,8 +138,6 @@
         }
       },
       "required": [
-        "policy",
-        "conflicts",
         "tools",
         "cli"
       ],
@@ -441,7 +441,7 @@
     },
     "Tool": {
       "additionalProperties": false,
-      "description": "Generic docker tool definition.",
+      "description": "Definition of a Library Tool.",
       "properties": {
         "id": {
           "description": "Unique tool identifier.",

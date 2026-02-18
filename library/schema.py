@@ -256,7 +256,7 @@ class ToolInputs(BaseModel):
 
 
 class Tool(BaseModel):
-    """Generic docker tool definition."""
+    """Definition of a Library Tool."""
 
     id: str = Field(
         ...,
@@ -350,11 +350,11 @@ class Config(BaseModel):
     """Configuration for Library Tools execution and CLI wiring."""
 
     policy: Literal["default", "strict", "expert"] = Field(
-        ...,
+        "default",
         description="Policy profile for tooling behavior.",
     )
     conflicts: Literal["warn", "strict"] = Field(
-        ...,
+        "warn",
         description="Conflict handling mode for tooling behavior.",
     )
     tools: list[Tool] = Field(

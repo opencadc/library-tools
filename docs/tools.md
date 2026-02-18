@@ -2,6 +2,35 @@
 
 This document defines the developer contract for tool configuration in `config`.
 
+## Phase 1 Scaffolding Runtime
+
+Phase 1 is execution scaffolding only.
+
+- Included:
+  - manifest tool resolution (`config.cli` -> `config.tools`)
+  - deterministic workspace staging
+  - docker execution
+  - token rendering
+  - output directory materialization
+- Out of scope:
+  - CLI command integration
+  - parser dispatch (`tool.parser` handling)
+  - migration of existing `library/cli/*` commands
+
+Runtime API:
+
+- `ToolRunContext`
+  - `manifest: Path`
+  - `command: str`
+  - `image: str`
+  - `time: datetime`
+- `ToolRunResult`
+  - `tool: str`
+  - `output: DirectoryPath`
+  - `exit_code: int`
+  - `stdout: str`
+  - `stderr: str`
+
 ## Goals
 
 - Keep the schema simple and explicit.
@@ -92,12 +121,12 @@ Each `tools[].inputs.<key>` entry contains:
 | `tool.inputs.<key>.destination` | `/config/trivy.yaml` | `config.tools[]` |
 | `tool.socket` | `true` | `config.tools[]` |
 | `tool.outputs` | `/outputs/` | `config.tools[]` (fixed literal) |
-| `image.reference` | `docker.io/library/alpine:3.19` | CLI runtime |
-| `DATETIME` | `20260217T213015Z` | CLI runtime clock |
+| `image.reference` | `docker.io/library/alpine:3.19` | `ToolRunContext.image` |
+| `DATETIME` | `20260217T213015Z` | `ToolRunContext.time` (UTC formatted) |
 
 ## Supported Command Tokens
 
-The schema validates these tokens in `tool.command`:
+Phase 1 runtime rendering supports only:
 
 - `{{inputs.<key>}}`
 - `{{image.reference}}`
@@ -109,21 +138,48 @@ Examples:
 
 ## Complete Lifecycle
 
-1. CLI command (for example `scan`) is resolved through `config.cli` to a tool id.
-2. CLI loads the matching tool from `config.tools`.
-3. CLI computes run directory:
+1. Caller creates `ToolRunContext` and provides:
+   - `manifest`: manifest path
+   - `command`: logical command key (for example `scan`)
+   - `image`: runtime image reference token value
+   - `time`: run timestamp
+2. `library.tools.runner.run(context)` loads manifest and resolves:
+   - `config.cli[command]` -> `tool.id`
+   - `tool.id` -> `config.tools[]` entry
+3. Runner computes run directory:
    - `./outputs/{tool-id}/{DATETIME}/`
-4. CLI creates that run directory.
-5. CLI resolves each input source:
+4. Runner creates that run directory.
+5. Runner resolves each input source:
    - `default` -> packaged config in the library
-   - file path -> local override
-6. CLI mounts each resolved input to its `destination` (read-only).
-7. CLI mounts host run directory to container `/outputs` (read-write).
-8. CLI mounts Docker socket if `socket=true`.
-9. CLI renders command tokens and runs the tool container.
+   - file path -> local override (resolved from manifest directory when relative)
+6. Runner mounts each resolved input to its `destination` (read-only).
+7. Runner mounts host run directory to container `/outputs` (read-write).
+8. Runner mounts Docker socket if `socket=true`.
+9. Runner renders command tokens and runs the tool container.
 10. Tool writes one or more JSON files into `/outputs/`.
 11. JSON artifacts are available on host under `./outputs/{tool-id}/{DATETIME}/`.
-12. Parser selected by `tool.parser` consumes outputs for result reporting.
+12. Runner returns `ToolRunResult` with tool id, output directory, exit code, stdout, and stderr.
+
+## Runnable Example
+
+```python
+from datetime import datetime, timezone
+from pathlib import Path
+
+from library.tools import ToolRunContext
+from library.tools.runner import run
+
+result = run(
+    ToolRunContext(
+        manifest=Path("manifest.yaml"),
+        command="scan",
+        image="images.canfar.net/library/my-image:latest",
+        time=datetime.now(timezone.utc),
+    )
+)
+
+print(result.tool, result.exit_code, result.output)
+```
 
 ## Minimal Example
 

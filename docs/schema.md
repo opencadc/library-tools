@@ -51,12 +51,12 @@ Configuration for Library Tools execution and CLI wiring.
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Description | Examples |
-| -------- | ---- | -------- | --------------- | ----------- | -------- |
-| policy | `string` | ✅ | `default` `strict` `expert` | Policy profile for tooling behavior. |  |
-| conflicts | `string` | ✅ | `warn` `strict` | Conflict handling mode for tooling behavior. |  |
-| tools | `array` | ✅ | [Tool](#tool) | Tool definitions available to CLI steps. |  |
-| cli | `object` | ✅ | object | CLI step name to tool id mapping. | ```{'lint': 'default-linter', 'scan': 'default-scanner'}``` |
+| Property | Type | Required | Possible values | Default | Description | Examples |
+| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| tools | `array` | ✅ | [Tool](#tool) |  | Tool definitions available to CLI steps. |  |
+| cli | `object` | ✅ | object |  | CLI step name to tool id mapping. | ```{'lint': 'default-linter', 'scan': 'default-scanner'}``` |
+| policy | `string` |  | `default` `strict` `expert` | `"default"` | Policy profile for tooling behavior. |  |
+| conflicts | `string` |  | `warn` `strict` | `"warn"` | Conflict handling mode for tooling behavior. |  |
 
 ## Discovery
 
@@ -141,7 +141,7 @@ Details about the container registry.
 
 ## Tool
 
-Generic docker tool definition.
+Definition of a Library Tool.
 
 #### Type: `object`
 
