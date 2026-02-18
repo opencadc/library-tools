@@ -8,7 +8,7 @@ import re
 import shlex
 from typing import Any, Literal, cast
 
-from yaml import safe_load
+from yaml import safe_load, dump
 from pydantic import (
     AnyUrl,
     BaseModel,
@@ -393,7 +393,7 @@ class Config(BaseModel):
 class Manifest(BaseModel):
     """CANFAR Library Tools Schema."""
 
-    version: Literal[1] = Field(..., description="Library manifest schema version.")
+    version: Literal[1] = Field(1, description="Library manifest schema version.")
     registry: Registry = Field(..., title="Registry", description="Image registry.")
     maintainers: list[Maintainer] = Field(
         ...,
@@ -449,6 +449,15 @@ class Manifest(BaseModel):
         """
         return cls(**data)
 
+    def save(self, path: Path = Path.cwd() / ".library.manifest.yaml") -> None:
+        """Save the manifest to a YAML file.
+
+        Args:
+            path: Path to the manifest YAML file.
+        """
+        payload = self.model_dump(exclude_defaults=True)
+        with path.open("w", encoding="utf-8") as datafile:
+            dump(payload, datafile, sort_keys=False)
 
 if __name__ == "__main__":
     # Emit the JSON Schema that downstream tools can consume.

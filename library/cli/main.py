@@ -73,7 +73,7 @@ cli: typer.Typer = typer.Typer(
     pretty_exceptions_show_locals=True,
     pretty_exceptions_enable=True,
     pretty_exceptions_short=True,
-    epilog="For more information, visit https://opencadc.github.io/canfar-library/",
+    epilog="For more information, visit https://opencadc.github.io/library-tools/",
     rich_markup_mode="rich",
     rich_help_panel="CANFAR Container Library CLI",
     callback=callback,
@@ -81,24 +81,28 @@ cli: typer.Typer = typer.Typer(
 )
 
 
-@cli.command("lint", help="Check for best practices.")
+@cli.command("lint", help="Check Dockerfile for best practices.")
 def hadolint_command(
-    path: Path | None = typer.Argument(None, help="Path to a manifest file."),
-    dockerfile: Path | None = typer.Option(
-        None, "--dockerfile", help="Path to a Dockerfile."
+    manifest: Path | None = typer.Option(
+        None,
+        "--manifest",
+        "-m",
+        help=(
+            "Path to manifest file. Defaults to ./.library.manifest.yaml "
+            "when not provided."
+        ),
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output."
     ),
 ) -> None:
-    """Run hadolint against a manifest or Dockerfile.
+    """Run hadolint against Dockerfile resolved from a manifest.
 
     Args:
-        path: Path to the manifest to lint.
-        dockerfile: Path to a Dockerfile.
+        manifest: Path to the manifest file.
         verbose: Whether to emit verbose output.
     """
-    exit_code = hadolint.run(path, dockerfile, verbose)
+    exit_code = hadolint.run(manifest, verbose)
     if exit_code == 0:
         console.print("[green]✅ Hadolint completed successfully.[/green]")
     else:

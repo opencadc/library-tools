@@ -17,6 +17,34 @@ Phase 1 is execution scaffolding only.
   - parser dispatch (`tool.parser` handling)
   - migration of existing `library/cli/*` commands
 
+## Phase 2 Hadolint Refactor
+
+Hadolint is now wired through the generic tool runner.
+
+- CLI entrypoint: `library/cli/hadolint.py`
+- Runner call: `library.tools.run(ToolRunContext(...))`
+- Parser module: `library/parsers/hadolint.py`
+- Parser API:
+  - `hadolint.parse(output_dir: Path) -> list[dict[str, object]]`
+  - `hadolint.report(violations: list[dict[str, object]]) -> int`
+
+Parser modules now live under `library/parsers` and are imported as:
+
+```python
+from library.parsers import hadolint
+```
+
+Manifest discovery for `library lint`:
+
+- Canonical manifest filename: `.library.manifest.yaml`
+- Optional override: `library lint --manifest <path>`
+- Default behavior: if `--manifest` is omitted, CLI searches current directory for:
+  - `.library.manifest.yaml`
+  - `.library.manifest.yml`
+
+For hadolint, the manifest `build.context` + `build.file` resolve the Dockerfile path.
+That Dockerfile is mounted into the container as `/inputs/Dockerfile`.
+
 Runtime API:
 
 - `ToolRunContext`
