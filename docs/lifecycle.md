@@ -6,7 +6,7 @@ From the perspective of a user, the lifecycle of a container image created using
 
 `library init` creates a structured manifest that captures:
 
-- Project and maintainer identity.
+- Project and author identity.
 - Build source and build intent.
 - Image naming and tagging intent.
 - Discovery metadata intent.
@@ -23,6 +23,12 @@ The manifest is the canonical contract for later commands.
 
 Users can override defaults using repository policy files, tool-specific config files, or CLI flags.
 
+Execution behavior:
+
+- `library lint` discovers `./.library.manifest.yaml` by default (or accepts `--manifest`).
+- If manifest tool override is not provided, package default tool definitions are used.
+- If manifest override is provided, both `config.tools` and `config.cli` must be present.
+
 ## 3) Build
 
 `library build` executes buildx-compatible image builds from manifest intent.
@@ -33,9 +39,20 @@ Advanced users can pass extra buildx arguments via passthrough (`-- <args>`), wh
 
 `library scan` runs vulnerability checks against target images. Results are structured for both human review and downstream curation.
 
+Execution behavior:
+
+- `scan` requires an explicit target image argument.
+- `scan` accepts optional `--manifest` for override configuration.
+- If no manifest is found/provided, `scan` still runs with package defaults.
+
 ## 5) Refurbish (Dependency Modernization)
 
 `library refurbish` updates Dockerfile dependency references and modernization opportunities. This step replaces the previous `renovate` command naming and aligns with the broader workflow language.
+
+Execution behavior:
+
+- `refurbish` discovers `./.library.manifest.yaml` by default (or accepts `--manifest`).
+- Backend parser identifier remains `renovate` for now.
 
 ## 6) Curate (Metadata + Artifact Packaging)
 

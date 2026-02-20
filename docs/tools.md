@@ -2,20 +2,13 @@
 
 This document defines the developer contract for tool configuration in `config`.
 
-## Phase 1 Scaffolding Runtime
+## Runtime Status
 
-Phase 1 is execution scaffolding only.
+Runtime scaffolding is now wired into CLI commands:
 
-- Included:
-  - manifest tool resolution (`config.cli` -> `config.tools`)
-  - deterministic workspace staging
-  - docker execution
-  - token rendering
-  - output directory materialization
-- Out of scope:
-  - CLI command integration
-  - parser dispatch (`tool.parser` handling)
-  - migration of existing `library/cli/*` commands
+- `library lint`
+- `library scan`
+- `library refurbish`
 
 ## Phase 2 Hadolint Refactor
 
@@ -105,6 +98,8 @@ List of tool definitions. Each tool entry has:
 - `socket`: whether `/var/run/docker.sock` is mounted.
 - `outputs`: fixed literal `/outputs/`.
 
+`config.tools` is optional and defaults to `[]`.
+
 ### `config.cli`
 
 Dictionary mapping CLI command names to tool ids.
@@ -114,10 +109,16 @@ Example:
 - `scan: default-scanner`
 - `lint: default-linter`
 
+`config.cli` is optional and defaults to `{}`.
+
 Validation rules:
 
 - every tool id in `config.tools` must be unique.
 - every `config.cli` target must reference an existing tool id.
+- catalog selection behavior:
+  - if both `config.tools` and `config.cli` are empty: package defaults are used.
+  - if both are non-empty: manifest override replaces package defaults.
+  - if only one is non-empty: command execution fails (partial override is invalid).
 
 ## ToolInputs
 
@@ -171,22 +172,25 @@ Examples:
    - `command`: logical command key (for example `scan`)
    - `image`: runtime image reference token value
    - `time`: run timestamp
-2. `library.tools.runner.run(context)` loads manifest and resolves:
-   - `config.cli[command]` -> `tool.id`
-   - `tool.id` -> `config.tools[]` entry
-3. Runner computes run directory:
+2. `library.tools.runner.run(context)` loads manifest and resolves effective catalog:
+   - defaults from `library/default.py` when no override is provided.
+   - manifest override when both `config.tools` and `config.cli` are provided.
+3. Runner resolves:
+   - `cli[command]` -> `tool.id`
+   - `tool.id` -> `tools[]` entry
+4. Runner computes run directory:
    - `./outputs/{tool-id}/{DATETIME}/`
-4. Runner creates that run directory.
-5. Runner resolves each input source:
+5. Runner creates that run directory.
+6. Runner resolves each input source:
    - `default` -> packaged config in the library
    - file path -> local override (resolved from manifest directory when relative)
-6. Runner mounts each resolved input to its `destination` (read-only).
-7. Runner mounts host run directory to container `/outputs` (read-write).
-8. Runner mounts Docker socket if `socket=true`.
-9. Runner renders command tokens and runs the tool container.
-10. Tool writes one or more JSON files into `/outputs/`.
-11. JSON artifacts are available on host under `./outputs/{tool-id}/{DATETIME}/`.
-12. Runner returns `ToolRunResult` with tool id, output directory, exit code, stdout, and stderr.
+7. Runner mounts each resolved input to its `destination` (read-only).
+8. Runner mounts host run directory to container `/outputs` (read-write).
+9. Runner mounts Docker socket if `socket=true`.
+10. Runner renders command tokens and runs the tool container.
+11. Tool writes one or more JSON files into `/outputs/`.
+12. JSON artifacts are available on host under `./outputs/{tool-id}/{DATETIME}/`.
+13. Runner returns `ToolRunResult` with tool id, output directory, exit code, stdout, and stderr.
 
 ## Runnable Example
 

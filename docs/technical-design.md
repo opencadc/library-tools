@@ -12,6 +12,10 @@ Creates a manifest from project context and user input, with scientist-first def
 
 Runs policy checks against Dockerfile and manifest-driven expectations. Under the hood, integrates hadolint and related validation logic, while allowing config overrides.
 
+CLI surface:
+
+- `library lint [--manifest|-m PATH] [--verbose|-v]`
+
 ## `library build`
 
 Builds container images from manifest intent. Supports passthrough args to buildx (`-- <args>`) with guardrails that prevent overriding manifest-owned fields (for example tag/platform/file metadata controls).
@@ -20,9 +24,17 @@ Builds container images from manifest intent. Supports passthrough args to build
 
 Runs vulnerability analysis against target images (Trivy backend initially), with profile-controlled thresholds and optional explicit scanner config overrides.
 
+CLI surface:
+
+- `library scan <image> [--manifest|-m PATH] [--verbose|-v]`
+
 ## `library refurbish`
 
 Replaces `library renovate` as the dependency modernization command. Updates Dockerfile dependency references and emits structured summaries suitable for curation and review.
+
+CLI surface:
+
+- `library refurbish [--manifest|-m PATH] [--verbose|-v] [--json]`
 
 ## `library curate`
 
@@ -68,6 +80,12 @@ Policy is layered and transparent:
 2. Repository policy file overrides.
 3. Tool-specific config files (hadolint/trivy/refurbish backend).
 4. CLI flag overrides.
+
+Tool catalog behavior:
+
+- Default: package-shipped tools/CLI mapping are used.
+- Manifest override: both `config.tools` and `config.cli` must be provided and replace defaults entirely.
+- Partial override is rejected.
 
 Each command should emit effective policy information to reduce ambiguity and simplify debugging.
 

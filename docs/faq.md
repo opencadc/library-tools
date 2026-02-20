@@ -48,6 +48,11 @@ Both. The workflow is opinionated by default, but policy is configurable.
 - Tool-level overrides are supported for backends like hadolint, trivy, and refurbish integrations.
 - CLI flags can override profile behavior for one-off runs.
 
+Tool override contract:
+
+- If `config.tools` and `config.cli` are omitted (or empty), package defaults are used.
+- If either field is overridden, both must be provided together.
+
 ## Where can I run Library Tools?
 
 Current priority support is:
@@ -56,6 +61,12 @@ Current priority support is:
 - Git-based CI workflows.
 
 Non-repo local directory workflows are planned for a later phase.
+
+Manifest discovery:
+
+- Canonical filename is `.library.manifest.yaml`.
+- `lint` and `refurbish` require a manifest (discovered from current directory or passed via `--manifest`).
+- `scan` can run without a manifest when an image argument is provided.
 
 ## How is metadata handled between manifest and Dockerfile?
 

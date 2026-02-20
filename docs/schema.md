@@ -11,20 +11,36 @@ Schema to capture build intent, discovery metadata, and tool configuration.
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Description |
-| -------- | ---- | -------- | --------------- | ----------- |
-| version | `const` | ✅ | `1` | Library manifest schema version. |
-| registry | `object` | ✅ | [Registry](#registry) | Image registry. |
-| maintainers | `array` | ✅ | [Maintainer](#maintainer) | Image maintainers. |
-| git | `object` | ✅ | [Git](#git) | Image repository. |
-| build | `object` | ✅ | [Build](#build) | Image build info. |
-| metadata | `object` | ✅ | [Metadata](#metadata) | Image metadata. |
-| config | `object` | ✅ | [Config](#config) | Tool configuration. |
+| Property | Type | Required | Possible values | Default | Description |
+| -------- | ---- | -------- | --------------- | ------- | ----------- |
+| registry | `object` | ✅ | [Registry](#registry) |  | Image registry. |
+| build | `object` | ✅ | [Build](#build) |  | Image build info. |
+| metadata | `object` | ✅ | [Metadata](#metadata) |  | Image metadata. |
+| config | `object` | ✅ | [Config](#config) |  | Tool configuration. |
+| version | `const` |  | `1` | `1` | Library manifest schema version. |
 
 
 ---
 
 # Definitions
+
+## Author
+
+Details about an author of the image.
+
+#### Type: `object`
+
+> ⚠️ Additional properties are not allowed.
+
+| Property | Type | Required | Possible values | Default | Description | Examples |
+| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
+| name | `string` | ✅ | string |  | Name of the author. | ```John Doe``` |
+| email | `string` | ✅ | string |  | Contact email address for the author. | ```john.doe@example.com``` |
+| github | `string` or `null` |  | string | `null` | GitHub Username. | ```johndoe``` |
+| gitlab | `string` or `null` |  | string | `null` | GitLab Username. | ```johndoe``` |
+| orcid | `string` or `null` |  | string | `null` | Open Researcher and Contributor ID. | ```0000-0002-1825-0097``` |
+| affiliation | `string` or `null` |  | string | `null` | Affiliation of the author. | ```Oxford University``` |
+| role | `string` |  | `maintainer` `contributor` | `"maintainer"` | Role of the author. | ```Maintainer```, ```Contributor``` |
 
 ## Build
 
@@ -53,10 +69,10 @@ Configuration for Library Tools execution and CLI wiring.
 
 | Property | Type | Required | Possible values | Default | Description | Examples |
 | -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
-| tools | `array` | ✅ | [Tool](#tool) |  | Tool definitions available to CLI steps. |  |
-| cli | `object` | ✅ | object |  | CLI step name to tool id mapping. | ```{'lint': 'default-linter', 'scan': 'default-scanner'}``` |
 | policy | `string` |  | `default` `strict` `expert` | `"default"` | Policy profile for tooling behavior. |  |
 | conflicts | `string` |  | `warn` `strict` | `"warn"` | Conflict handling mode for tooling behavior. |  |
+| tools | `array` |  | [Tool](#tool) |  | Tool definitions available to CLI steps. |  |
+| cli | `object` |  | object |  | CLI step name to tool id mapping. | ```{'lint': 'default-linter', 'scan': 'default-scanner'}``` |
 
 ## Discovery
 
@@ -68,50 +84,21 @@ Discovery metadata mapped to OCI labels/annotations.
 
 | Property | Type | Required | Possible values | Default | Description | Examples |
 | -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
-| title | `string` | ✅ | string |  | Human-readable title of the image. |  |
-| description | `string` | ✅ | string |  | Human-readable description of the software packaged in the image. |  |
-| source | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to get source code for building the image |  |
-| url | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to find more information on the image. |  |
-| documentation | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to get documentation on the image |  |
-| version | `string` | ✅ | string |  | Version of the packaged software. |  |
-| revision | `string` | ✅ | string |  | Source control revision identifier for the packaged software. For example a git commit SHA. |  |
-| created | `string` | ✅ | Format: [`date-time`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | Datetime on which the image was built. Conforming to RFC 3339 |  |
-| authors | `string` | ✅ | string |  | Details of the people or organization responsible for the image |  |
-| licenses | `string` | ✅ | string |  | License(s) under which contained software is distributed as an SPDX License Expression. |  |
-| domain | `array` | ✅ | string |  | Scientific domains supported by this image. | ```['astronomy']```, ```['astronomy', 'scientific-computing']``` |
-| kind | `array` | ✅ | `notebook` `headless` `carta` `firefly` `contributed` |  | Discovery kinds that classify this image. | ```['headless']```, ```['notebook', 'headless']``` |
-| keywords | `array` |  | string |  | Keywords used to support software discovery and search. | ```astronomy```, ```analysis```, ```python``` |
+| title | `string` | ✅ | string |  | Human-readable title of the image. | ```Baseband Analysis``` |
+| description | `string` | ✅ | Length: `1 <= string <= 255` |  | Human-readable description of the software packaged in the image. | ```Baseband analysis tools for radio astronomy.``` |
+| source | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to get source code for building the image. | ```https://github.com/example/repo``` |
+| version | `string` | ✅ | string |  | Version of the packaged software. | ```1.0.0``` |
+| revision | `string` | ✅ | string |  | Source control revision identifier for the packaged software. | ```1234567890123456789012345678901234567890``` |
+| created | `string` | ✅ | Format: [`date-time`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | Datetime on which the image was built. Conforming to RFC 3339. | ```2026-02-05T12:00:00Z``` |
+| authors | `array` | ✅ | [Author](#author) |  | Details of the people or organization responsible for the image | ```{'email': 'john.doe@example.com', 'name': 'John Doe'}``` |
+| licenses | `string` | ✅ | string |  | License(s) under which contained software is distributed as an SPDX License Expression. | ```AGPL-3.0```, ```AGPL-3.0-only```, `````` |
+| keywords | `array` | ✅ | string |  | Keywords used to support software discovery and search. | ```astronomy```, ```analysis```, ```python``` |
+| kind | `array` | ✅ | `notebook` `headless` `carta` `firefly` `contributed` `desktop` |  | Discovery kinds that classify this image. | ```['headless']```, ```['notebook', 'headless']``` |
+| url | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to find more information on the image. | ```https://example.com/baseband-analysis``` |
+| documentation | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to get documentation on the image. | ```https://example.com/baseband-analysis/docs``` |
+| domain | `array` |  | string | `["astronomy"]` | Scientific domains supported by this image. | ```['astronomy']```, ```['astronomy', 'scientific-computing']``` |
 | tools | `array` |  | string |  | Common tools included in the image. | ```python```, ```jupyterlab```, ```astropy``` |
-| deprecated | `boolean` |  | boolean | `false` | Whether this image is deprecated and should no longer be used. |  |
-
-## Git
-
-Repository information for the image build source.
-
-#### Type: `object`
-
-> ⚠️ Additional properties are not allowed.
-
-| Property | Type | Required | Possible values | Default | Description | Examples |
-| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
-| repo | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | Git repository. | ```https://github.com/opencadc/canfar-library``` |
-| commit | `string` | ✅ | string |  | SHA commit hash to build. | ```1234567890123456789012345678901234567890``` |
-| fetch | `string` |  | string | `"refs/heads/main"` | Git fetch reference. | ```refs/heads/main```, ```refs/heads/develop``` |
-
-## Maintainer
-
-Details about the maintainer of the image.
-
-#### Type: `object`
-
-> ⚠️ Additional properties are not allowed.
-
-| Property | Type | Required | Possible values | Default | Description |
-| -------- | ---- | -------- | --------------- | ------- | ----------- |
-| name | `string` | ✅ | string |  | Name of the maintainer. |
-| email | `string` | ✅ | string |  | Contact email. |
-| github | `string` or `null` |  | string | `null` | GitHub Username. |
-| gitlab | `string` or `null` |  | string | `null` | GitLab Username. |
+| deprecated | `boolean` |  | boolean | `false` | Whether this image is deprecated and should no longer be used. | ```False```, ```True``` |
 
 ## Metadata
 
@@ -133,11 +120,11 @@ Details about the container registry.
 
 > ⚠️ Additional properties are not allowed.
 
-| Property | Type | Required | Possible values | Default | Description | Examples |
-| -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
-| project | `string` | ✅ | string |  | Container registry project. | ```skaha``` |
-| image | `string` | ✅ | string |  | Container image name. | ```python```, ```base``` |
-| host | `string` |  | string | `"images.canfar.net"` | Container registry hostname. | ```images.canfar.net``` |
+| Property | Type | Required | Possible values | Description | Examples |
+| -------- | ---- | -------- | --------------- | ----------- | -------- |
+| host | `string` | ✅ | string | Container registry hostname. | ```images.canfar.net```, ```docker.io``` |
+| project | `string` | ✅ | string | Container registry project/namespace. | ```skaha```, ```chimefrb``` |
+| image | `string` | ✅ | string | Container image name. | ```python```, ```baseband-analysis``` |
 
 ## Tool
 

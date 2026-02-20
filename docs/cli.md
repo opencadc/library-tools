@@ -24,8 +24,8 @@ library init --output manifests/my-image.yaml
 Lint Dockerfile and manifest configuration against policy defaults or selected profile.
 
 ```bash
-library lint manifests/my-image.yaml
-library lint manifests/my-image.yaml --profile strict
+library lint
+library lint --manifest manifests/my-image.yaml
 ```
 
 ### `build`
@@ -43,6 +43,7 @@ Scan a container image for vulnerabilities.
 
 ```bash
 library scan images.canfar.net/library/my-image:1.0
+library scan images.canfar.net/library/my-image:1.0 --manifest manifests/my-image.yaml
 ```
 
 ### `refurbish`
@@ -50,7 +51,9 @@ library scan images.canfar.net/library/my-image:1.0
 Modernize Dockerfile dependencies and emit structured update results.
 
 ```bash
-library refurbish manifests/my-image.yaml
+library refurbish
+library refurbish --manifest manifests/my-image.yaml
+library refurbish --manifest manifests/my-image.yaml --json
 ```
 
 ### `curate`
@@ -86,6 +89,12 @@ Built-in policy profiles:
 - `expert` (power-user minimal defaults)
 
 Tool backends (for example hadolint, trivy, and refurbish integrations) can be overridden with user-supplied configuration.
+
+Default/override behavior:
+
+- If manifest `config.tools` and `config.cli` are both omitted (or empty), package defaults are used.
+- If both are provided, manifest definitions replace package defaults.
+- Partial override (only one provided) is invalid.
 
 ## Roadmap Notes
 
