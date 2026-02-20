@@ -9,7 +9,7 @@ from typing import Any, cast
 from yaml import safe_load
 
 from library.schema import Manifest, Tool, ToolInputs
-from library.tools import defaults, render, resolve, workspace
+from library.tools import catalog, defaults, render, resolve, workspace
 from library.tools.models import ToolRunContext, ToolRunResult
 from library.utils import runtime
 
@@ -65,7 +65,7 @@ def _resolve_input_source(
 ) -> Path:
     """Resolve host input file path for a tool input entry."""
     if input_config.source == "default":
-        return defaults.input(tool=tool, input_key=input_key)
+        return defaults.input(tool=tool, input_key=input_key, manifest=manifest)
 
     source_path = Path(str(input_config.source))
     if not source_path.is_absolute():
@@ -101,7 +101,11 @@ def run(context: ToolRunContext) -> ToolRunResult:
     """Run a manifest-configured tool in Docker and return execution result."""
     manifest_path = context.manifest.resolve()
     manifest = _load_manifest(manifest_path)
-    tool = resolve.for_command(manifest=manifest, command=context.command)
+    resolved_catalog = catalog.resolve(manifest.config)
+    tool = resolve.tool(
+        tool_id=resolve.tool_id(context.command, resolved_catalog.cli),
+        tools=resolved_catalog.tools,
+    )
 
     output_dir = workspace.create(
         root=manifest_path.parent,

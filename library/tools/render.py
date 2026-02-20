@@ -27,14 +27,14 @@ def _resolve_token(
 
 
 def command(
-    command: Sequence[str],
+    cmd: Sequence[str],
     *,
     inputs: Mapping[str, ToolInputs],
     image_reference: str,
 ) -> list[str]:
     """Render supported command tokens in a tokenized argv list."""
     rendered: list[str] = []
-    for part in command:
+    for part in cmd:
         matches = TOOL_TOKEN_PATTERN.findall(part)
         if ("{{" in part or "}}" in part) and not matches:
             raise ValueError("Malformed template token in tool command.")

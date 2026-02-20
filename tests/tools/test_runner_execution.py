@@ -38,13 +38,6 @@ def _base_manifest(tool: dict[str, object], cli: dict[str, str]) -> dict[str, ob
             "project": "library",
             "image": "sample-image",
         },
-        "maintainers": [
-            {"name": "Example Maintainer", "email": "maintainer@example.com"}
-        ],
-        "git": {
-            "repo": "https://github.com/opencadc/canfar-library",
-            "commit": "1234567890123456789012345678901234567890",
-        },
         "build": {"context": ".", "file": "Dockerfile", "tags": ["latest"]},
         "metadata": {
             "discovery": {
@@ -56,8 +49,14 @@ def _base_manifest(tool: dict[str, object], cli: dict[str, str]) -> dict[str, ob
                 "version": "1.0.0",
                 "revision": "1234567890123456789012345678901234567890",
                 "created": "2026-02-05T12:00:00Z",
-                "authors": "Example Maintainer",
+                "authors": [
+                    {
+                        "name": "Example Maintainer",
+                        "email": "maintainer@example.com",
+                    }
+                ],
                 "licenses": "MIT",
+                "keywords": ["sample", "testing"],
                 "domain": ["astronomy"],
                 "kind": ["headless"],
             }
