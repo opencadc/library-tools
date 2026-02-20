@@ -1,5 +1,111 @@
 {
   "$defs": {
+    "Author": {
+      "additionalProperties": false,
+      "description": "Details about an author of the image.",
+      "properties": {
+        "name": {
+          "description": "Name of the author.",
+          "examples": [
+            "John Doe"
+          ],
+          "title": "Name",
+          "type": "string"
+        },
+        "email": {
+          "description": "Contact email address for the author.",
+          "examples": [
+            "john.doe@example.com"
+          ],
+          "title": "Email",
+          "type": "string"
+        },
+        "github": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "GitHub Username.",
+          "examples": [
+            "johndoe"
+          ],
+          "title": "GitHub Username"
+        },
+        "gitlab": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "GitLab Username.",
+          "examples": [
+            "johndoe"
+          ],
+          "title": "GitLab Username"
+        },
+        "orcid": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Open Researcher and Contributor ID.",
+          "examples": [
+            "0000-0002-1825-0097"
+          ],
+          "title": "ORCID"
+        },
+        "affiliation": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Affiliation of the author.",
+          "examples": [
+            "Oxford University"
+          ],
+          "title": "Affiliation"
+        },
+        "role": {
+          "default": "maintainer",
+          "description": "Role of the author.",
+          "enum": [
+            "maintainer",
+            "contributor"
+          ],
+          "examples": [
+            "Maintainer",
+            "Contributor"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "email"
+      ],
+      "title": "Author",
+      "type": "object"
+    },
     "Build": {
       "additionalProperties": false,
       "description": "Configuration for building the container image.",
@@ -137,10 +243,6 @@
           "type": "object"
         }
       },
-      "required": [
-        "tools",
-        "cli"
-      ],
       "title": "Config",
       "type": "object"
     },
@@ -150,58 +252,114 @@
       "properties": {
         "title": {
           "description": "Human-readable title of the image.",
+          "examples": [
+            "Baseband Analysis"
+          ],
           "title": "Title",
           "type": "string"
         },
         "description": {
           "description": "Human-readable description of the software packaged in the image.",
+          "examples": [
+            "Baseband analysis tools for radio astronomy."
+          ],
+          "maxLength": 255,
+          "minLength": 1,
           "title": "Description",
           "type": "string"
         },
         "source": {
-          "description": "URL to get source code for building the image",
+          "description": "URL to get source code for building the image.",
+          "examples": [
+            "https://github.com/example/repo"
+          ],
           "format": "uri",
           "minLength": 1,
           "title": "Source",
           "type": "string"
         },
         "url": {
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
           "description": "URL to find more information on the image.",
-          "format": "uri",
-          "minLength": 1,
-          "title": "Url",
-          "type": "string"
+          "examples": [
+            "https://example.com/baseband-analysis"
+          ],
+          "title": "URL"
         },
         "documentation": {
-          "description": "URL to get documentation on the image",
-          "format": "uri",
-          "minLength": 1,
-          "title": "Documentation",
-          "type": "string"
+          "anyOf": [
+            {
+              "format": "uri",
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "URL to get documentation on the image.",
+          "examples": [
+            "https://example.com/baseband-analysis/docs"
+          ],
+          "title": "Documentation"
         },
         "version": {
           "description": "Version of the packaged software.",
+          "examples": [
+            "1.0.0"
+          ],
           "title": "Version",
           "type": "string"
         },
         "revision": {
-          "description": "Source control revision identifier for the packaged software. For example a git commit SHA.",
+          "description": "Source control revision identifier for the packaged software.",
+          "examples": [
+            "1234567890123456789012345678901234567890"
+          ],
           "title": "Revision",
           "type": "string"
         },
         "created": {
-          "description": "Datetime on which the image was built. Conforming to RFC 3339",
+          "description": "Datetime on which the image was built. Conforming to RFC 3339.",
+          "examples": [
+            "2026-02-05T12:00:00Z"
+          ],
           "format": "date-time",
-          "title": "Created",
+          "title": "Created Timestamp",
           "type": "string"
         },
         "authors": {
           "description": "Details of the people or organization responsible for the image",
+          "examples": [
+            {
+              "email": "john.doe@example.com",
+              "name": "John Doe"
+            }
+          ],
+          "items": {
+            "$ref": "#/$defs/Author"
+          },
           "title": "Authors",
-          "type": "string"
+          "type": "array"
         },
         "licenses": {
           "description": "License(s) under which contained software is distributed as an SPDX License Expression.",
+          "examples": [
+            "AGPL-3.0",
+            "AGPL-3.0-only",
+            ""
+          ],
           "title": "Licenses",
           "type": "string"
         },
@@ -219,6 +377,9 @@
           "type": "array"
         },
         "domain": {
+          "default": [
+            "astronomy"
+          ],
           "description": "Scientific domains supported by this image.",
           "examples": [
             [
@@ -253,7 +414,8 @@
               "headless",
               "carta",
               "firefly",
-              "contributed"
+              "contributed",
+              "desktop"
             ],
             "type": "string"
           },
@@ -277,6 +439,10 @@
         "deprecated": {
           "default": false,
           "description": "Whether this image is deprecated and should no longer be used.",
+          "examples": [
+            false,
+            true
+          ],
           "title": "Deprecated",
           "type": "boolean"
         }
@@ -285,105 +451,15 @@
         "title",
         "description",
         "source",
-        "url",
-        "documentation",
         "version",
         "revision",
         "created",
         "authors",
         "licenses",
-        "domain",
+        "keywords",
         "kind"
       ],
       "title": "Discovery",
-      "type": "object"
-    },
-    "Git": {
-      "additionalProperties": false,
-      "description": "Repository information for the image build source.",
-      "properties": {
-        "repo": {
-          "description": "Git repository.",
-          "examples": [
-            "https://github.com/opencadc/canfar-library"
-          ],
-          "format": "uri",
-          "minLength": 1,
-          "title": "Repository",
-          "type": "string"
-        },
-        "fetch": {
-          "default": "refs/heads/main",
-          "description": "Git fetch reference.",
-          "examples": [
-            "refs/heads/main",
-            "refs/heads/develop"
-          ],
-          "title": "Git Fetch Reference",
-          "type": "string"
-        },
-        "commit": {
-          "description": "SHA commit hash to build.",
-          "examples": [
-            "1234567890123456789012345678901234567890"
-          ],
-          "title": "SHA Commit Hash",
-          "type": "string"
-        }
-      },
-      "required": [
-        "repo",
-        "commit"
-      ],
-      "title": "Git",
-      "type": "object"
-    },
-    "Maintainer": {
-      "additionalProperties": false,
-      "description": "Details about the maintainer of the image.",
-      "properties": {
-        "name": {
-          "description": "Name of the maintainer.",
-          "title": "Name",
-          "type": "string"
-        },
-        "email": {
-          "description": "Contact email.",
-          "title": "Email",
-          "type": "string"
-        },
-        "github": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "GitHub Username.",
-          "title": "GitHub Username"
-        },
-        "gitlab": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "description": "GitLab Username.",
-          "title": "GitLab Username"
-        }
-      },
-      "required": [
-        "name",
-        "email"
-      ],
-      "title": "Maintainer",
       "type": "object"
     },
     "Metadata": {
@@ -406,18 +482,19 @@
       "description": "Details about the container registry.",
       "properties": {
         "host": {
-          "default": "images.canfar.net",
           "description": "Container registry hostname.",
           "examples": [
-            "images.canfar.net"
+            "images.canfar.net",
+            "docker.io"
           ],
           "title": "Hostname",
           "type": "string"
         },
         "project": {
-          "description": "Container registry project.",
+          "description": "Container registry project/namespace.",
           "examples": [
-            "skaha"
+            "skaha",
+            "chimefrb"
           ],
           "title": "Project",
           "type": "string"
@@ -426,13 +503,14 @@
           "description": "Container image name.",
           "examples": [
             "python",
-            "base"
+            "baseband-analysis"
           ],
           "title": "Image Name",
           "type": "string"
         }
       },
       "required": [
+        "host",
         "project",
         "image"
       ],
@@ -587,6 +665,7 @@
   "properties": {
     "version": {
       "const": 1,
+      "default": 1,
       "description": "Library manifest schema version.",
       "title": "Version",
       "type": "integer"
@@ -594,19 +673,6 @@
     "registry": {
       "$ref": "#/$defs/Registry",
       "description": "Image registry."
-    },
-    "maintainers": {
-      "description": "Image maintainers.",
-      "items": {
-        "$ref": "#/$defs/Maintainer"
-      },
-      "title": "Maintainers",
-      "type": "array"
-    },
-    "git": {
-      "$ref": "#/$defs/Git",
-      "description": "Image repository.",
-      "title": "Git Info"
     },
     "build": {
       "$ref": "#/$defs/Build",
@@ -623,10 +689,7 @@
     }
   },
   "required": [
-    "version",
     "registry",
-    "maintainers",
-    "git",
     "build",
     "metadata",
     "config"

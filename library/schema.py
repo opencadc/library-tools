@@ -24,16 +24,50 @@ DISCOVERY_KINDS = ("notebook", "headless", "carta", "firefly", "contributed")
 TOOL_TOKEN_PATTERN = re.compile(r"{{\s*([a-zA-Z0-9_.-]+)\s*}}")
 
 
-class Maintainer(BaseModel):
-    """Details about the maintainer of the image."""
+class Author(BaseModel):
+    """Details about an author of the image."""
 
-    name: str = Field(..., title="Name", description="Name of the maintainer.")
-    email: str = Field(..., title="Email", description="Contact email.")
+    name: str = Field(
+        ...,
+        title="Name",
+        description="Name of the author.",
+        examples=["John Doe"],
+    )
+    email: str = Field(
+        ...,
+        title="Email",
+        description="Contact email address for the author.",
+        examples=["john.doe@example.com"],
+    )
     github: str | None = Field(
-        None, title="GitHub Username", description="GitHub Username."
+        None,
+        title="GitHub Username",
+        description="GitHub Username.",
+        examples=["johndoe"],
     )
     gitlab: str | None = Field(
-        None, title="GitLab Username", description="GitLab Username."
+        None,
+        title="GitLab Username",
+        description="GitLab Username.",
+        examples=["johndoe"],
+    )
+    orcid: str | None = Field(
+        None,
+        title="ORCID",
+        description="Open Researcher and Contributor ID.",
+        examples=["0000-0002-1825-0097"],
+    )
+    affiliation: str | None = Field(
+        None,
+        title="Affiliation",
+        description="Affiliation of the author.",
+        examples=["Oxford University"],
+    )
+    role: Literal["maintainer", "contributor"] = Field(
+        "maintainer",
+        title="Role",
+        description="Role of the author.",
+        examples=["Maintainer", "Contributor"],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -43,47 +77,22 @@ class Registry(BaseModel):
     """Details about the container registry."""
 
     host: str = Field(
-        "images.canfar.net",
+        ...,
         title="Hostname",
         description="Container registry hostname.",
-        examples=["images.canfar.net"],
+        examples=["images.canfar.net", "docker.io"],
     )
     project: str = Field(
         ...,
         title="Project",
-        description="Container registry project.",
-        examples=["skaha"],
+        description="Container registry project/namespace.",
+        examples=["skaha", "chimefrb"],
     )
     image: str = Field(
         ...,
         title="Image Name",
         description="Container image name.",
-        examples=["python", "base"],
-    )
-
-    model_config = ConfigDict(extra="forbid", validate_assignment=True)
-
-
-class Git(BaseModel):
-    """Repository information for the image build source."""
-
-    repo: AnyUrl = Field(
-        ...,
-        title="Repository",
-        description="Git repository.",
-        examples=["https://github.com/opencadc/canfar-library"],
-    )
-    fetch: str = Field(
-        "refs/heads/main",
-        title="Git Fetch Reference",
-        description="Git fetch reference.",
-        examples=["refs/heads/main", "refs/heads/develop"],
-    )
-    commit: str = Field(
-        ...,
-        title="SHA Commit Hash",
-        description="SHA commit hash to build.",
-        examples=["1234567890123456789012345678901234567890"],
+        examples=["python", "baseband-analysis"],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -153,52 +162,87 @@ class Build(BaseModel):
 class Discovery(BaseModel):
     """Discovery metadata mapped to OCI labels/annotations."""
 
-    title: str = Field(..., description="Human-readable title of the image.")
+    title: str = Field(
+        ...,
+        title="Title",
+        description="Human-readable title of the image.",
+        examples=["Baseband Analysis"],
+    )
     description: str = Field(
         ...,
+        title="Description",
         description="Human-readable description of the software packaged in the image.",
+        examples=["Baseband analysis tools for radio astronomy."],
+        min_length=1,
+        max_length=255,
     )
     source: AnyUrl = Field(
-        ..., description="URL to get source code for building the image"
+        ...,
+        title="Source",
+        description="URL to get source code for building the image.",
+        examples=["https://github.com/example/repo"],
     )
-    url: AnyUrl = Field(..., description="URL to find more information on the image.")
-    documentation: AnyUrl = Field(
-        ..., description="URL to get documentation on the image"
+    url: AnyUrl | None = Field(
+        None,
+        title="URL",
+        description="URL to find more information on the image.",
+        examples=["https://example.com/baseband-analysis"],
     )
-    version: str = Field(..., description="Version of the packaged software.")
+    documentation: AnyUrl | None = Field(
+        None,
+        title="Documentation",
+        description="URL to get documentation on the image.",
+        examples=["https://example.com/baseband-analysis/docs"],
+    )
+    version: str = Field(
+        ...,
+        title="Version",
+        description="Version of the packaged software.",
+        examples=["1.0.0"],
+    )
+    # Computed Field
     revision: str = Field(
         ...,
-        description="Source control revision identifier for the packaged software. For example a git commit SHA.",
+        description="Source control revision identifier for the packaged software.",
+        examples=["1234567890123456789012345678901234567890"],
     )
+    # Computed Field
     created: datetime = Field(
-        ..., description="Datetime on which the image was built. Conforming to RFC 3339"
-    )
-    authors: str = Field(
         ...,
+        title="Created Timestamp",
+        description="Datetime on which the image was built. Conforming to RFC 3339.",
+        examples=["2026-02-05T12:00:00Z"],
+    )
+    authors: list[Author] = Field(
+        ...,
+        title="Authors",
         description="Details of the people or organization responsible for the image",
+        examples=[{"name": "John Doe", "email": "john.doe@example.com"}],
     )
     licenses: str = Field(
         ...,
+        title="Licenses",
         description="License(s) under which contained software is distributed as an SPDX License Expression.",
+        examples=["AGPL-3.0", "AGPL-3.0-only", ""],
     )
     keywords: list[str] = Field(
-        default_factory=list,
+        ...,
         description="Keywords used to support software discovery and search.",
         examples=["astronomy", "analysis", "python"],
     )
     domain: list[str] = Field(
-        ...,
+        ["astronomy"],
         min_length=1,
         description="Scientific domains supported by this image.",
         examples=[["astronomy"], ["astronomy", "scientific-computing"]],
     )
-    kind: list[Literal["notebook", "headless", "carta", "firefly", "contributed"]] = (
-        Field(
-            ...,
-            min_length=1,
-            description="Discovery kinds that classify this image.",
-            examples=[["headless"], ["notebook", "headless"]],
-        )
+    kind: list[
+        Literal["notebook", "headless", "carta", "firefly", "contributed", "desktop"]
+    ] = Field(
+        ...,
+        min_length=1,
+        description="Discovery kinds that classify this image.",
+        examples=[["headless"], ["notebook", "headless"]],
     )
     tools: list[str] = Field(
         default_factory=list,
@@ -207,7 +251,9 @@ class Discovery(BaseModel):
     )
     deprecated: bool = Field(
         False,
+        title="Deprecated",
         description="Whether this image is deprecated and should no longer be used.",
+        examples=[False, True],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -358,11 +404,11 @@ class Config(BaseModel):
         description="Conflict handling mode for tooling behavior.",
     )
     tools: list[Tool] = Field(
-        ...,
+        default_factory=list,
         description="Tool definitions available to CLI steps.",
     )
     cli: dict[str, str] = Field(
-        ...,
+        default_factory=dict,
         description="CLI step name to tool id mapping.",
         examples=[{"scan": "default-scanner", "lint": "default-linter"}],
     )
@@ -376,6 +422,12 @@ class Config(BaseModel):
         unique_ids = set(tool_ids)
         if len(unique_ids) != len(tool_ids):
             raise ValueError("Tool ids must be unique in config.tools.")
+        if not self.tools and not self.cli:
+            return self
+        # Partial override semantics are enforced by tools.catalog.resolve().
+        # At schema-level, only validate mappings when tools are explicitly provided.
+        if not self.tools:
+            return self
         unknown_targets = {
             command: tool_id
             for command, tool_id in self.cli.items()
@@ -395,12 +447,6 @@ class Manifest(BaseModel):
 
     version: Literal[1] = Field(1, description="Library manifest schema version.")
     registry: Registry = Field(..., title="Registry", description="Image registry.")
-    maintainers: list[Maintainer] = Field(
-        ...,
-        title="Maintainers",
-        description="Image maintainers.",
-    )
-    git: Git = Field(..., title="Git Info", description="Image repository.")
     build: Build = Field(..., title="Build Info", description="Image build info.")
     metadata: Metadata = Field(..., title="Metadata", description="Image metadata.")
     config: Config = Field(..., title="Config", description="Tool configuration.")
@@ -409,6 +455,7 @@ class Manifest(BaseModel):
         extra="forbid",
         validate_assignment=True,
         populate_by_name=True,
+        json_schema_serialization_defaults_required=True,
         json_schema_extra={
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "https://raw.githubusercontent.com/opencadc/canfar-library/main/.spec.json",
@@ -455,9 +502,10 @@ class Manifest(BaseModel):
         Args:
             path: Path to the manifest YAML file.
         """
-        payload = self.model_dump(exclude_defaults=True)
+        payload = self.model_dump(mode="json", exclude_defaults=True)
         with path.open("w", encoding="utf-8") as datafile:
             dump(payload, datafile, sort_keys=False)
+
 
 if __name__ == "__main__":
     # Emit the JSON Schema that downstream tools can consume.
