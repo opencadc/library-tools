@@ -52,7 +52,7 @@ def test_helpers_load_manifest(fixtures_dir: Path) -> None:
     manifest_model = helpers.load_manifest(manifest_path)
 
     assert isinstance(manifest_model, Manifest)
-    assert manifest_model.git.repo
+    assert manifest_model.metadata.discovery.authors
 
 
 def test_helpers_parse_json_output() -> None:

@@ -9,8 +9,9 @@ import json
 import typer
 
 from library import schema
-from library.cli import build, hadolint, renovate, trivy
+from library.cli import build, hadolint, refurbish, trivy
 from library.utils.console import console
+from library import DEFAULT_LIBRARY_MANIFEST_FILENAME
 
 
 def callback(ctx: typer.Context) -> None:
@@ -25,7 +26,7 @@ def callback(ctx: typer.Context) -> None:
 
 
 def _format_update_line(update: dict[str, object]) -> str | None:
-    """Format a single renovate update line.
+    """Format a single refurbish update line.
 
     Args:
         update: Update record from renovate.
@@ -43,10 +44,10 @@ def _format_update_line(update: dict[str, object]) -> str | None:
     return f"- {dep_name}: {new_value}{digest_suffix} ({update_type})"
 
 
-def _emit_renovate_summary(
+def _emit_refurbish_summary(
     summary: dict[str, list[dict[str, object]]], *, json_output: bool
 ) -> None:
-    """Emit renovate summary output.
+    """Emit refurbish summary output.
 
     Args:
         summary: Renovate summary data.
@@ -82,15 +83,12 @@ cli: typer.Typer = typer.Typer(
 
 
 @cli.command("lint", help="Check Dockerfile for best practices.")
-def hadolint_command(
-    manifest: Path | None = typer.Option(
-        None,
+def linter(
+    manifest: Path = typer.Option(
+        Path.cwd() / DEFAULT_LIBRARY_MANIFEST_FILENAME,
         "--manifest",
         "-m",
-        help=(
-            "Path to manifest file. Defaults to ./.library.manifest.yaml "
-            "when not provided."
-        ),
+        help=("Path to library manifest file."),
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output."
@@ -111,10 +109,13 @@ def hadolint_command(
 
 
 @cli.command("scan", help="Check Container Image for CVEs.")
-def scan_command(
+def scanner(
     image: str = typer.Argument(..., help="Docker image to scan."),
-    cache_dir: Path = typer.Option(
-        Path("~/.cache/trivy"), "--cache-dir", help="Trivy DB cache directory."
+    manifest: Path = typer.Option(
+        Path.cwd() / DEFAULT_LIBRARY_MANIFEST_FILENAME,
+        "--manifest",
+        "-m",
+        help=("Path to library manifest file."),
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output."
@@ -124,40 +125,41 @@ def scan_command(
 
     Args:
         image: Docker image to scan.
-        cache_dir: Trivy DB cache directory.
+        manifest: Path to optional manifest file.
         verbose: Whether to emit verbose output.
     """
-    exit_code = trivy.run(image, cache_dir, verbose)
+    exit_code = trivy.run(image, manifest, verbose)
     raise typer.Exit(exit_code)
 
 
-@cli.command("renovate", help="Find outdated dependencies.")
-def renovate_command(
-    path: Path | None = typer.Argument(None, help="Path to a manifest file."),
-    dockerfile: Path | None = typer.Option(
-        None, "--dockerfile", help="Path to a Dockerfile."
+@cli.command("refurbish", help="Find outdated dependencies.")
+def refurbisher(
+    manifest: Path = typer.Option(
+        Path.cwd() / DEFAULT_LIBRARY_MANIFEST_FILENAME,
+        "--manifest",
+        "-m",
+        help=("Path to library manifest file."),
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output."
     ),
-    json_output: bool = typer.Option(
+    jsonify: bool = typer.Option(
         False, "--json", help="Emit raw JSON updates summary."
     ),
 ) -> None:
-    """Run renovate against a manifest or Dockerfile.
+    """Run refurbish against a manifest.
 
     Args:
-        path: Path to the manifest to scan.
-        dockerfile: Path to a Dockerfile.
+        manifest: Path to the manifest.
         verbose: Whether to emit verbose output.
         json_output: Whether to emit JSON output.
     """
-    summary = renovate.run_renovate(path, dockerfile, verbose)
-    _emit_renovate_summary(summary, json_output=json_output)
+    summary = refurbish.run(manifest, verbose)
+    _emit_refurbish_summary(summary, json_output=jsonify)
 
 
 @cli.command("validate", help="Check manifest for compliance.")
-def validate_command(path: Path) -> None:
+def validator(path: Path) -> None:
     """Validate a manifest file against the schema.
 
     Args:
@@ -172,7 +174,7 @@ def validate_command(path: Path) -> None:
     help="Build a container image with buildx.",
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
 )
-def build_command(ctx: typer.Context, path: Path) -> None:
+def builder(ctx: typer.Context, path: Path) -> None:
     """Build a container image using the manifest defaults.
 
     Args:

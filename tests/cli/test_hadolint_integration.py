@@ -20,10 +20,40 @@ def test_hadolint_chain_manifest(fixtures_dir: Path, tmp_path: Path) -> None:
     manifest_path.write_text(
         safe_dump(
             {
+                "version": 1,
+                "registry": {
+                    "host": "images.canfar.net",
+                    "project": "library",
+                    "image": "sample-image",
+                },
                 "build": {
                     "context": str(dockerfile_path.parent),
                     "file": dockerfile_path.name,
-                }
+                    "tags": ["latest"],
+                },
+                "metadata": {
+                    "discovery": {
+                        "title": "Sample Image",
+                        "description": "Sample description for testing.",
+                        "source": "https://github.com/opencadc/canfar-library",
+                        "url": "https://images.canfar.net/library/sample-image",
+                        "documentation": "https://canfar.net/docs/user-guide",
+                        "version": "1.0.0",
+                        "revision": "1234567890123456789012345678901234567890",
+                        "created": "2026-02-05T12:00:00Z",
+                        "authors": [
+                            {
+                                "name": "Example Maintainer",
+                                "email": "maintainer@example.com",
+                            }
+                        ],
+                        "licenses": "MIT",
+                        "keywords": ["sample", "testing"],
+                        "domain": ["astronomy"],
+                        "kind": ["headless"],
+                    }
+                },
+                "config": {},
             },
             sort_keys=False,
         ),
