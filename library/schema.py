@@ -63,11 +63,11 @@ class Author(BaseModel):
         description="Affiliation of the author.",
         examples=["Oxford University"],
     )
-    role: Literal["maintainer", "contributor"] = Field(
+    role: str = Field(
         "maintainer",
         title="Role",
         description="Role of the author.",
-        examples=["Maintainer", "Contributor"],
+        examples=["maintainer", "contributor", "researcher", "developer"],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -202,13 +202,13 @@ class Discovery(BaseModel):
     )
     # Computed Field
     revision: str = Field(
-        ...,
+        "unknown",
         description="Source control revision identifier for the packaged software.",
         examples=["1234567890123456789012345678901234567890"],
     )
     # Computed Field
     created: datetime = Field(
-        ...,
+        default=datetime.now(tz=datetime.now().astimezone().tzinfo),
         title="Created Timestamp",
         description="Datetime on which the image was built. Conforming to RFC 3339.",
         examples=["2026-02-05T12:00:00Z"],
@@ -306,7 +306,7 @@ class Tool(BaseModel):
 
     id: str = Field(
         ...,
-        title="ID",
+        title="Tool ID",
         description="Unique tool identifier.",
         pattern=r"^[a-zA-Z0-9][a-zA-Z0-9._-]*$",
         examples=["default-scanner", "srcnet-scanner"],
@@ -315,14 +315,14 @@ class Tool(BaseModel):
         Field(
             ...,
             title="Parser",
-            description="Built-in parser used to consume the tool JSON outputs.",
+            description="Built-in parser used to consume the tool outputs.",
             examples=["trivy", "hadolint"],
         )
     )
     image: str = Field(
         ...,
-        title="Image",
-        description="Container image to run the tool in.",
+        title="Tool Image",
+        description="Container image used to run the tool.",
         examples=["docker.io/aquasec/trivy:latest"],
     )
     command: list[str] = Field(
@@ -330,7 +330,7 @@ class Tool(BaseModel):
         min_length=1,
         title="Command",
         description=(
-            "Tokenized command argv executed in the tool container. "
+            "Tokenized command executed in the tool container."
             "Supported tokens: {{inputs.<key>}} and {{image.reference}}."
         ),
         examples=[
@@ -349,8 +349,9 @@ class Tool(BaseModel):
     )
     env: dict[str, str] = Field(
         default_factory=dict,
-        title="Environment",
+        title="Tool Environment",
         description="Environment variables passed to the tool container.",
+        examples=[{"TRIVY_DEBUG": "true"}],
     )
     inputs: dict[str, ToolInputs] = Field(
         default_factory=dict,
@@ -364,7 +365,7 @@ class Tool(BaseModel):
     )
     outputs: Literal["/outputs/"] = Field(
         "/outputs/",
-        title="Outputs",
+        title="Tool Outputs Path",
         description=("Fixed container directory where tools must write outputs."),
         examples=["/outputs/"],
     )
@@ -460,7 +461,11 @@ class Manifest(BaseModel):
             "$schema": "https://json-schema.org/draft/2020-12/schema",
             "$id": "https://raw.githubusercontent.com/opencadc/canfar-library/main/.spec.json",
             "title": "CANFAR Library Tools Schema",
-            "description": "Schema to capture build intent, discovery metadata, and tool configuration.",
+            "description": (
+                "Canonical schema for build intent, discovery metadata, and tool "
+                "configuration. Runtime defaults and layered override merging are "
+                "applied separately before validation."
+            ),
         },
     )
 

@@ -87,13 +87,11 @@
         "role": {
           "default": "maintainer",
           "description": "Role of the author.",
-          "enum": [
-            "maintainer",
-            "contributor"
-          ],
           "examples": [
-            "Maintainer",
-            "Contributor"
+            "maintainer",
+            "contributor",
+            "researcher",
+            "developer"
           ],
           "title": "Role",
           "type": "string"
@@ -323,6 +321,7 @@
           "type": "string"
         },
         "revision": {
+          "default": "unknown",
           "description": "Source control revision identifier for the packaged software.",
           "examples": [
             "1234567890123456789012345678901234567890"
@@ -331,6 +330,7 @@
           "type": "string"
         },
         "created": {
+          "default": "2026-02-20T16:18:51.616195-08:00",
           "description": "Datetime on which the image was built. Conforming to RFC 3339.",
           "examples": [
             "2026-02-05T12:00:00Z"
@@ -452,8 +452,6 @@
         "description",
         "source",
         "version",
-        "revision",
-        "created",
         "authors",
         "licenses",
         "keywords",
@@ -528,11 +526,11 @@
             "srcnet-scanner"
           ],
           "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._-]*$",
-          "title": "ID",
+          "title": "Tool ID",
           "type": "string"
         },
         "parser": {
-          "description": "Built-in parser used to consume the tool JSON outputs.",
+          "description": "Built-in parser used to consume the tool outputs.",
           "enum": [
             "hadolint",
             "trivy",
@@ -549,15 +547,15 @@
           "type": "string"
         },
         "image": {
-          "description": "Container image to run the tool in.",
+          "description": "Container image used to run the tool.",
           "examples": [
             "docker.io/aquasec/trivy:latest"
           ],
-          "title": "Image",
+          "title": "Tool Image",
           "type": "string"
         },
         "command": {
-          "description": "Tokenized command argv executed in the tool container. Supported tokens: {{inputs.<key>}} and {{image.reference}}.",
+          "description": "Tokenized command executed in the tool container.Supported tokens: {{inputs.<key>}} and {{image.reference}}.",
           "examples": [
             [
               "trivy",
@@ -583,7 +581,12 @@
             "type": "string"
           },
           "description": "Environment variables passed to the tool container.",
-          "title": "Environment",
+          "examples": [
+            {
+              "TRIVY_DEBUG": "true"
+            }
+          ],
+          "title": "Tool Environment",
           "type": "object"
         },
         "inputs": {
@@ -607,7 +610,7 @@
           "examples": [
             "/outputs/"
           ],
-          "title": "Outputs",
+          "title": "Tool Outputs Path",
           "type": "string"
         }
       },
@@ -661,7 +664,7 @@
   "$id": "https://raw.githubusercontent.com/opencadc/canfar-library/main/.spec.json",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
-  "description": "Schema to capture build intent, discovery metadata, and tool configuration.",
+  "description": "Canonical schema for build intent, discovery metadata, and tool configuration. Runtime defaults and layered override merging are applied separately before validation.",
   "properties": {
     "version": {
       "const": 1,
