@@ -5,13 +5,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import json
-
 import typer
 
-from library import schema
-from library.cli import build, hadolint, refurbish, trivy
+from library.cli import dispatch
 from library.utils.console import console
-from library import DEFAULT_LIBRARY_MANIFEST_FILENAME
 
 
 def callback(ctx: typer.Context) -> None:
@@ -23,47 +20,6 @@ def callback(ctx: typer.Context) -> None:
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
         raise typer.Exit(0)
-
-
-def _format_update_line(update: dict[str, object]) -> str | None:
-    """Format a single refurbish update line.
-
-    Args:
-        update: Update record from renovate.
-
-    Returns:
-        Formatted update line or None.
-    """
-    dep_name = update.get("depName") or update.get("packageName")
-    new_value = update.get("newValue") or update.get("newVersion")
-    new_digest = update.get("newDigest")
-    update_type = update.get("updateType") or "update"
-    if not dep_name or not new_value:
-        return None
-    digest_suffix = f"@{new_digest}" if new_digest else ""
-    return f"- {dep_name}: {new_value}{digest_suffix} ({update_type})"
-
-
-def _emit_refurbish_summary(
-    summary: dict[str, list[dict[str, object]]], *, json_output: bool
-) -> None:
-    """Emit refurbish summary output.
-
-    Args:
-        summary: Renovate summary data.
-        json_output: Whether to emit JSON output.
-    """
-    updates = summary.get("updates", [])
-    if updates:
-        console.print("[cyan]Detected updates:[/cyan]")
-        for update in updates:
-            line = _format_update_line(update)
-            if line:
-                console.print(line)
-    else:
-        console.print("[yellow]No updates detected.[/yellow]")
-    if json_output:
-        console.print_json(json.dumps(summary))
 
 
 cli: typer.Typer = typer.Typer(
@@ -84,8 +40,8 @@ cli: typer.Typer = typer.Typer(
 
 @cli.command("lint", help="Check Dockerfile for best practices.")
 def linter(
-    manifest: Path = typer.Option(
-        Path.cwd() / DEFAULT_LIBRARY_MANIFEST_FILENAME,
+    manifest: Path | None = typer.Option(
+        None,
         "--manifest",
         "-m",
         help=("Path to library manifest file."),
@@ -100,7 +56,13 @@ def linter(
         manifest: Path to the manifest file.
         verbose: Whether to emit verbose output.
     """
-    exit_code = hadolint.run(manifest, verbose)
+    dispatched = dispatch.run_tool_command(
+        "lint",
+        manifest_path=manifest,
+        image_reference=None,
+        verbose=verbose,
+    )
+    exit_code = dispatched.result.exit_code
     if exit_code == 0:
         console.print("[green]✅ Hadolint completed successfully.[/green]")
     else:
@@ -111,8 +73,8 @@ def linter(
 @cli.command("scan", help="Check Container Image for CVEs.")
 def scanner(
     image: str = typer.Argument(..., help="Docker image to scan."),
-    manifest: Path = typer.Option(
-        Path.cwd() / DEFAULT_LIBRARY_MANIFEST_FILENAME,
+    manifest: Path | None = typer.Option(
+        None,
         "--manifest",
         "-m",
         help=("Path to library manifest file."),
@@ -128,14 +90,20 @@ def scanner(
         manifest: Path to optional manifest file.
         verbose: Whether to emit verbose output.
     """
-    exit_code = trivy.run(image, manifest, verbose)
+    dispatched = dispatch.run_tool_command(
+        "scan",
+        manifest_path=manifest,
+        image_reference=image,
+        verbose=verbose,
+    )
+    exit_code = dispatched.result.exit_code
     raise typer.Exit(exit_code)
 
 
 @cli.command("refurbish", help="Find outdated dependencies.")
 def refurbisher(
-    manifest: Path = typer.Option(
-        Path.cwd() / DEFAULT_LIBRARY_MANIFEST_FILENAME,
+    manifest: Path | None = typer.Option(
+        None,
         "--manifest",
         "-m",
         help=("Path to library manifest file."),
@@ -154,8 +122,15 @@ def refurbisher(
         verbose: Whether to emit verbose output.
         json_output: Whether to emit JSON output.
     """
-    summary = refurbish.run(manifest, verbose)
-    _emit_refurbish_summary(summary, json_output=jsonify)
+    dispatched = dispatch.run_tool_command(
+        "refurbish",
+        manifest_path=manifest,
+        image_reference=None,
+        verbose=verbose,
+    )
+    if jsonify:
+        console.print_json(json.dumps(dispatched.payload))
+    raise typer.Exit(dispatched.result.exit_code)
 
 
 @cli.command("validate", help="Check manifest for compliance.")
@@ -165,8 +140,7 @@ def validator(path: Path) -> None:
     Args:
         path: Path to the manifest to validate.
     """
-    schema.Manifest.from_yaml(path)
-    console.print("[green]✅ Manifest is valid.[/green]")
+    dispatch.run_validate(path)
 
 
 @cli.command(
@@ -181,7 +155,7 @@ def builder(ctx: typer.Context, path: Path) -> None:
         ctx: Typer context for extra args.
         path: Path to the manifest file.
     """
-    exit_code = build.run_build(path, list(ctx.args))
+    exit_code = dispatch.run_build(path, list(ctx.args))
     raise typer.Exit(exit_code)
 
 

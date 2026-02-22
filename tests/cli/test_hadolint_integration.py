@@ -6,8 +6,9 @@ from pathlib import Path
 
 import pytest
 from yaml import safe_dump
+from typer.testing import CliRunner
 
-from library.cli.hadolint import run
+from library.cli.main import cli
 from tests.cli.conftest import skip_if_docker_unavailable
 
 
@@ -59,5 +60,6 @@ def test_hadolint_chain_manifest(fixtures_dir: Path, tmp_path: Path) -> None:
         ),
         encoding="utf-8",
     )
-    result = run(manifest_path, False)
-    assert result == 0
+    runner = CliRunner()
+    result = runner.invoke(cli, ["lint", "--manifest", str(manifest_path)])
+    assert result.exit_code == 0

@@ -71,7 +71,9 @@ def _write_manifest(path: Path, dockerfile_path: Path) -> None:
     )
 
 
-def test_library_refurbish_runs_with_manifest(cli_runner, fixtures_dir, tmp_path) -> None:
+def test_library_refurbish_runs_with_manifest(
+    cli_runner, fixtures_dir, tmp_path
+) -> None:
     """Run refurbish against a manifest-resolved Dockerfile."""
     skip_if_docker_unavailable()
     dockerfile_path = (fixtures_dir / "Dockerfile.hadolint.good").resolve()
@@ -84,7 +86,9 @@ def test_library_refurbish_runs_with_manifest(cli_runner, fixtures_dir, tmp_path
     assert "Detected updates" in result.stdout or "No updates detected" in result.stdout
 
 
-def test_library_refurbish_emits_json_output(cli_runner, fixtures_dir, tmp_path) -> None:
+def test_library_refurbish_emits_json_output(
+    cli_runner, fixtures_dir, tmp_path
+) -> None:
     """Refurbish should emit JSON output when requested."""
     skip_if_docker_unavailable()
     dockerfile_path = (fixtures_dir / "Dockerfile.hadolint.good").resolve()
