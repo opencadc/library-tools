@@ -2,58 +2,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, cast
 
-from yaml import safe_load
-
-from library.schema import Manifest, Tool, ToolInputs
-from library.tools import catalog, defaults, render, resolve, workspace
+from library import manifest as runtime_manifest
+from library.schema import Tool, ToolInputs
+from library.tools import defaults, render, resolve, workspace
 from library.tools.models import ToolRunContext, ToolRunResult
 from library.utils import runtime
 
 CONTAINER_OUTPUTS_PATH = "/outputs"
 DOCKER_SOCKET_PATH = "/var/run/docker.sock"
-
-
-def _normalize_input_sources(path: Path, payload: dict[str, Any]) -> dict[str, Any]:
-    """Normalize relative input sources to absolute paths from manifest dir."""
-    config = payload.get("config")
-    if not isinstance(config, Mapping):
-        return payload
-    tools = config.get("tools")
-    if not isinstance(tools, list):
-        return payload
-    for tool in tools:
-        if not isinstance(tool, dict):
-            continue
-        inputs = tool.get("inputs")
-        if not isinstance(inputs, Mapping):
-            continue
-        for input_data in inputs.values():
-            if not isinstance(input_data, dict):
-                continue
-            source = input_data.get("source")
-            if not isinstance(source, str) or source == "default":
-                continue
-            source_path = Path(source)
-            if source_path.is_absolute():
-                continue
-            input_data["source"] = str((path.parent / source_path).resolve())
-    return payload
-
-
-def _load_manifest(path: Path) -> Manifest:
-    """Load manifest and normalize relative tool input source paths."""
-    with path.open("r", encoding="utf-8") as handle:
-        payload = safe_load(handle)
-    if payload is None:
-        payload = {}
-    if not isinstance(payload, dict):
-        raise ValueError("Manifest must be a dictionary.")
-    normalized = _normalize_input_sources(path, cast(dict[str, Any], payload))
-    return Manifest.from_dict(normalized)
 
 
 def _resolve_input_source(
@@ -100,12 +58,8 @@ def _build_volumes(
 def run(context: ToolRunContext) -> ToolRunResult:
     """Run a manifest-configured tool in Docker and return execution result."""
     manifest_path = context.manifest.resolve()
-    manifest = _load_manifest(manifest_path)
-    resolved_catalog = catalog.resolve(manifest.config)
-    tool = resolve.tool(
-        tool_id=resolve.tool_id(context.command, resolved_catalog.cli),
-        tools=resolved_catalog.tools,
-    )
+    manifest_model = runtime_manifest.Manifest.from_yaml(manifest_path)
+    tool = resolve.for_command(manifest_model, context.command)
 
     output_dir = workspace.create(
         root=manifest_path.parent,

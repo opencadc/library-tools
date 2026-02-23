@@ -32,4 +32,23 @@ metadata:
     tools:
       - python
       - jupyter
-config: {}
+config:
+  policy: default
+  conflicts: warn
+  tools:
+    - id: default-scanner
+      parser: trivy
+      image: docker.io/aquasec/trivy:latest
+      command:
+        - trivy
+        - image
+        - "{{image.reference}}"
+      env: {}
+      inputs:
+        trivy:
+          source: default
+          destination: /inputs/.trivy.yaml
+      socket: true
+      outputs: /outputs/
+  cli:
+    scan: default-scanner

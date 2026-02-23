@@ -8,6 +8,7 @@ import pytest
 from yaml import safe_dump
 from typer.testing import CliRunner
 
+from library import manifest as runtime_manifest
 from library.cli.main import cli
 from tests.cli.conftest import skip_if_docker_unavailable
 
@@ -52,9 +53,10 @@ def test_hadolint_chain_manifest(fixtures_dir: Path, tmp_path: Path) -> None:
                         "keywords": ["sample", "testing"],
                         "domain": ["astronomy"],
                         "kind": ["headless"],
+                        "tools": ["python"],
                     }
                 },
-                "config": {},
+                "config": runtime_manifest.default_config().model_dump(mode="python"),
             },
             sort_keys=False,
         ),

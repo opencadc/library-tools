@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from library.schema import Manifest, Tool
+from library.schema import Schema, Tool
 
 
 def tool_id(command: str, cli: Mapping[str, str]) -> str:
@@ -25,7 +25,7 @@ def tool(tool_id: str, tools: Sequence[Tool]) -> Tool:
     return matches[0]
 
 
-def for_command(manifest: Manifest, command: str) -> Tool:
+def for_command(manifest: Schema, command: str) -> Tool:
     """Resolve command mapping and return the configured Tool."""
     resolved_id = tool_id(command=command, cli=manifest.config.cli)
     return tool(tool_id=resolved_id, tools=manifest.config.tools)

@@ -3,11 +3,9 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
-
-from yaml import safe_load
 
 from library import HADOLINT_CONFIG_PATH, RENOVATE_CONFIG_PATH, TRIVY_CONFIG_PATH
+from library import manifest as runtime_manifest
 from library.schema import Tool
 
 DEFAULT_INPUT_REGISTRY: dict[str, Path] = {
@@ -17,31 +15,12 @@ DEFAULT_INPUT_REGISTRY: dict[str, Path] = {
 }
 
 
-def _load_manifest_payload(path: Path) -> dict[str, Any]:
-    """Load manifest YAML into a dictionary payload."""
-    with path.open("r", encoding="utf-8") as handle:
-        payload = safe_load(handle)
-    if payload is None:
-        payload = {}
-    if not isinstance(payload, dict):
-        raise ValueError("Manifest must be a dictionary.")
-    return cast(dict[str, Any], payload)
-
-
 def _resolve_manifest_dockerfile(path: Path) -> Path:
     """Resolve Dockerfile host path from manifest build context/file."""
-    payload = _load_manifest_payload(path)
-    build = payload.get("build")
-    if not isinstance(build, dict):
-        raise ValueError("Manifest build section is required.")
-
-    context = build.get("context", ".")
-    file_name = build.get("file", "Dockerfile")
-    if not isinstance(context, str) or not isinstance(file_name, str):
-        raise ValueError("Manifest build.context and build.file must be strings.")
-    dockerfile = Path(file_name)
+    manifest = runtime_manifest.Manifest.from_yaml(path)
+    dockerfile = Path(manifest.build.file)
     if not dockerfile.is_absolute():
-        dockerfile = path.parent / context / dockerfile
+        dockerfile = path.parent / manifest.build.context / dockerfile
     dockerfile = dockerfile.resolve()
     if not dockerfile.is_file():
         raise ValueError(f"Dockerfile from manifest does not exist: {dockerfile}")

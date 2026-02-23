@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from library import schema
+from library import manifest
 from library.utils.console import console
 
 
@@ -22,7 +22,7 @@ def read_dockerfile(dockerfile_path: Path) -> str:
     return dockerfile_path.read_text(encoding="utf-8")
 
 
-def load_manifest(manifest_path: Path) -> schema.Manifest:
+def load_manifest(manifest_path: Path) -> manifest.Manifest:
     """Load and validate a manifest file.
 
     Args:
@@ -32,7 +32,7 @@ def load_manifest(manifest_path: Path) -> schema.Manifest:
         Manifest model instance.
     """
     console.print(f"[cyan]Reading Manifest: {manifest_path}[/cyan]")
-    return schema.Manifest.from_yaml(manifest_path)
+    return manifest.Manifest.from_yaml(manifest_path)
 
 
 def resolve_dockerfile_contents(
@@ -56,7 +56,10 @@ def resolve_dockerfile_contents(
         raise ValueError("Either manifest_path or dockerfile_path must be provided")
 
     manifest_model = load_manifest(manifest_path)
-    dockerfile_contents = manifest_model.dockerfile()
+    dockerfile = Path(manifest_model.build.file)
+    if not dockerfile.is_absolute():
+        dockerfile = manifest_path.parent / manifest_model.build.context / dockerfile
+    dockerfile_contents = read_dockerfile(dockerfile.resolve())
     console.print("[cyan]Resolved Dockerfile Contents:[/cyan]")
     console.print(f"\n{dockerfile_contents}\n")
     return dockerfile_contents

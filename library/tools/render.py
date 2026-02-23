@@ -5,7 +5,9 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 import re
 
-from library.schema import TOOL_TOKEN_PATTERN, ToolInputs
+from library.schema import ToolInputs
+
+TOOL_TOKEN_PATTERN = re.compile(r"{{\s*([a-zA-Z0-9_.-]+)\s*}}")
 
 
 def _resolve_token(

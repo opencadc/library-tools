@@ -59,6 +59,7 @@ def _base_manifest(tool: dict[str, object], cli: dict[str, str]) -> dict[str, ob
                 "keywords": ["sample", "testing"],
                 "domain": ["astronomy"],
                 "kind": ["headless"],
+                "tools": ["python"],
             }
         },
         "config": {
@@ -171,3 +172,81 @@ def test_runner_executes_tool_with_local_input_override(tmp_path: Path) -> None:
         result.output == tmp_path / "outputs" / "default-scanner" / "20260218T200500Z"
     )
     assert (result.output / "example.json").exists()
+
+
+@pytest.mark.integration
+def test_runner_executes_with_explicit_tool_config(tmp_path: Path) -> None:
+    """Runner should execute when tool configuration is provided explicitly."""
+    image = "docker.io/library/alpine:3.19"
+    _ensure_docker_and_image(image)
+
+    manifest_path = tmp_path / "manifest.yaml"
+    _write_manifest(
+        manifest_path,
+        {
+            "version": 1,
+            "registry": {
+                "host": "images.canfar.net",
+                "project": "library",
+                "image": "sample-image",
+            },
+            "build": {"context": ".", "file": "Dockerfile", "tags": ["latest"]},
+            "metadata": {
+                "discovery": {
+                    "title": "Sample Image",
+                    "description": "Sample description.",
+                    "source": "https://github.com/opencadc/canfar-library",
+                    "url": "https://images.canfar.net/library/sample-image",
+                    "documentation": "https://canfar.net/docs/user-guide",
+                    "version": "1.0.0",
+                    "revision": "1234567890123456789012345678901234567890",
+                    "created": "2026-02-05T12:00:00Z",
+                    "authors": [
+                        {
+                            "name": "Example Maintainer",
+                            "email": "maintainer@example.com",
+                        }
+                    ],
+                    "licenses": "MIT",
+                    "keywords": ["sample", "testing"],
+                    "domain": ["astronomy"],
+                    "kind": ["headless"],
+                    "tools": ["python"],
+                }
+            },
+            "config": {
+                "tools": [
+                    {
+                        "id": "default-scanner",
+                        "parser": "trivy",
+                        "image": image,
+                        "command": [
+                            "sh",
+                            "-c",
+                            "cat {{inputs.trivy}} >/dev/null && printf '{\"Results\":[]}' > /outputs/scan.json",
+                        ],
+                        "inputs": {
+                            "trivy": {
+                                "source": "default",
+                                "destination": "/config/trivy.yaml",
+                            }
+                        },
+                        "outputs": "/outputs/",
+                    }
+                ],
+                "cli": {"scan": "default-scanner"},
+            },
+        },
+    )
+
+    result = run(
+        ToolRunContext(
+            manifest=manifest_path,
+            command="scan",
+            image="images.canfar.net/library/example:latest",
+            time=datetime(2026, 2, 18, 20, 10, 0, tzinfo=timezone.utc),
+        )
+    )
+
+    assert result.exit_code == 0
+    assert (result.output / "scan.json").exists()

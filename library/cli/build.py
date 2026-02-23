@@ -6,7 +6,7 @@ from pathlib import Path
 import shlex
 import subprocess
 
-from library import schema
+from library import manifest as runtime_manifest
 from library.utils.console import console
 
 
@@ -60,7 +60,7 @@ def run_build(manifest_path: Path, extra_args: list[str]) -> int:
     Returns:
         Exit code from the buildx command.
     """
-    manifest = schema.Manifest.from_yaml(manifest_path)
+    manifest = runtime_manifest.Manifest.from_yaml(manifest_path)
     options_tokens = (
         shlex.split(manifest.build.options) if manifest.build.options else []
     )
@@ -70,8 +70,5 @@ def run_build(manifest_path: Path, extra_args: list[str]) -> int:
         return 2
 
     manifest.build.options = _append_options(manifest.build.options, extra_args)
-    try:
-        result = manifest.build_container_image()
-    except subprocess.CalledProcessError as exc:
-        return exc.returncode
+    result = subprocess.run(manifest.build.command(), check=False)
     return result.returncode

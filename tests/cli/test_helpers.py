@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from library.cli import helpers
-from library.schema import Manifest
+from library.manifest import Manifest
 
 
 def test_helpers_read_dockerfile(tmp_path: Path) -> None:

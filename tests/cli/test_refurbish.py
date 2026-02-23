@@ -8,6 +8,7 @@ from pathlib import Path
 
 from yaml import safe_dump
 
+from library import manifest as runtime_manifest
 from tests.cli.conftest import cli, skip_if_docker_unavailable
 
 
@@ -61,9 +62,10 @@ def _write_manifest(path: Path, dockerfile_path: Path) -> None:
                         "keywords": ["sample", "testing"],
                         "domain": ["astronomy"],
                         "kind": ["headless"],
+                        "tools": ["python"],
                     }
                 },
-                "config": {},
+                "config": runtime_manifest.default_config().model_dump(mode="python"),
             },
             sort_keys=False,
         ),
