@@ -1,16 +1,28 @@
-"""Tests for shipped default tool definitions."""
+"""Tests for runtime defaults exposed by manifest implementation."""
 
 from __future__ import annotations
 
-from library import default
+from library import manifest
 
 
-def test_hadolint_default_tool_shape() -> None:
-    """Hadolint default tool should match runtime contract inputs/outputs."""
-    tool = default.HadolintTool
+def test_runtime_default_tools_include_lint_scan_refurbish() -> None:
+    """Manifest implementation should ship runtime default tool catalog."""
+    model = manifest.default_config()
 
-    assert tool.id == "default-linter"
+    assert model.cli == {
+        "lint": "default-linter",
+        "scan": "default-scanner",
+        "refurbish": "default-refurbisher",
+    }
+    tool_ids = {tool.id for tool in model.tools}
+    assert tool_ids == {"default-linter", "default-scanner", "default-refurbisher"}
+
+
+def test_runtime_default_hadolint_inputs_shape() -> None:
+    """Hadolint runtime default should keep expected input destinations."""
+    model = manifest.default_config()
+    tool = next(tool for tool in model.tools if tool.id == "default-linter")
+
     assert tool.outputs == "/outputs/"
     assert tool.inputs["hadolint"].destination == "/inputs/.hadolint.yaml"
     assert tool.inputs["dockerfile"].destination == "/inputs/Dockerfile"
-    assert default.HadolintCli == {"lint": "default-linter"}
