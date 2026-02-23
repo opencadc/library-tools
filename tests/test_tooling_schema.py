@@ -1,4 +1,4 @@
-"""Tests for the flattened generic tool schema."""
+"""Tests for canonical flattened generic tool schema."""
 
 from __future__ import annotations
 
@@ -52,9 +52,10 @@ def test_tool_inputs_source_allows_default_or_existing_file(tmp_path: Path) -> N
 
 
 def test_tool_inputs_destination_must_be_absolute() -> None:
-    """ToolInputs destination must be an absolute container path."""
-    with pytest.raises(ValueError):
-        ToolInputs(source="default", destination="config.yaml")
+    """Destination path format checks are runtime-manifest concerns."""
+    item = ToolInputs(source="default", destination="config.yaml")
+
+    assert item.destination == "config.yaml"
 
 
 def test_tool_outputs_must_be_fixed() -> None:
@@ -65,8 +66,8 @@ def test_tool_outputs_must_be_fixed() -> None:
         Tool(**data)
 
 
-def test_command_tokens_must_reference_declared_inputs() -> None:
-    """inputs token names in command must exist in tool.inputs."""
+def test_command_tokens_are_not_validated_in_schema() -> None:
+    """Command token semantics are validated in runtime manifest implementation."""
     data = _scan_tool()
     data["command"] = [
         "--config",
@@ -74,35 +75,51 @@ def test_command_tokens_must_reference_declared_inputs() -> None:
         "--output",
         "/outputs/out.json",
     ]
-    with pytest.raises(ValueError):
-        Tool(**data)
+    tool = Tool(**data)
+
+    assert tool.command[1] == "{{inputs.missing}}"
 
 
-def test_command_rejects_unsupported_tokens() -> None:
-    """Only inputs.* and image.reference tokens are supported."""
+def test_unsupported_tokens_are_not_validated_in_schema() -> None:
+    """Unsupported token names are validated in runtime manifest implementation."""
     data = _scan_tool()
     data["command"] = ["--output", "{{outputs}}scan.json"]
+    tool = Tool(**data)
+
+    assert tool.command[1] == "{{outputs}}scan.json"
+
+
+def test_config_allows_cli_with_unknown_tool_ids() -> None:
+    """CLI mapping integrity checks run in runtime manifest implementation."""
+    config = Config(
+        policy="default",
+        conflicts="warn",
+        tools=[Tool(**_scan_tool())],
+        cli={"scan": "missing-tool"},
+    )
+
+    assert config.cli["scan"] == "missing-tool"
+
+
+def test_config_allows_duplicate_tool_ids() -> None:
+    """Duplicate tool id checks run in runtime manifest implementation."""
+    config = Config(
+        policy="default",
+        conflicts="warn",
+        tools=[Tool(**_scan_tool()), Tool(**_scan_tool())],
+        cli={"scan": "scan-tool"},
+    )
+
+    assert len(config.tools) == 2
+
+
+def test_config_requires_tools_and_cli_in_schema_contract() -> None:
+    """Canonical schema requires full config block for interoperability."""
     with pytest.raises(ValueError):
-        Tool(**data)
+        Config()
 
 
-def test_config_cli_must_reference_known_tool_ids() -> None:
-    """Config cli mappings must reference defined tool ids."""
+def test_config_rejects_cli_without_tools_in_schema_contract() -> None:
+    """Partial config defaults are implemented only in runtime manifest model."""
     with pytest.raises(ValueError):
-        Config(
-            policy="default",
-            conflicts="warn",
-            tools=[Tool(**_scan_tool())],
-            cli={"scan": "missing-tool"},
-        )
-
-
-def test_config_rejects_duplicate_tool_ids() -> None:
-    """Config tool list must not contain duplicate tool ids."""
-    with pytest.raises(ValueError):
-        Config(
-            policy="default",
-            conflicts="warn",
-            tools=[Tool(**_scan_tool()), Tool(**_scan_tool())],
-            cli={"scan": "scan-tool"},
-        )
+        Config(cli={"scan": "custom-scan"})

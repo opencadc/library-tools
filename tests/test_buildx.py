@@ -7,25 +7,18 @@ import subprocess
 
 import pytest
 
-from library.schema import Manifest
+from library.schema import Schema
 from library.utils import docker as docker_utils
 from tests.cli.conftest import skip_if_docker_unavailable
 
 
-def _make_manifest(*, build: dict[str, object]) -> Manifest:
+def _make_manifest(*, build: dict[str, object]) -> Schema:
     data = {
         "version": 1,
         "registry": {
             "host": "images.canfar.net",
             "project": "library",
             "image": "buildx-test",
-        },
-        "maintainers": [
-            {"name": "Build Test", "email": "build-test@example.com"},
-        ],
-        "git": {
-            "repo": "https://github.com/opencadc/canfar-library",
-            "commit": "1234567890123456789012345678901234567890",
         },
         "build": build,
         "metadata": {
@@ -38,7 +31,7 @@ def _make_manifest(*, build: dict[str, object]) -> Manifest:
                 "version": "1.0.0",
                 "revision": "1234567890123456789012345678901234567890",
                 "created": "2026-02-05T12:00:00Z",
-                "authors": "Build Test",
+                "authors": [{"name": "Build Test", "email": "build-test@example.com"}],
                 "licenses": "MIT",
                 "keywords": ["buildx"],
                 "domain": ["astronomy"],
@@ -53,7 +46,7 @@ def _make_manifest(*, build: dict[str, object]) -> Manifest:
             "cli": {},
         },
     }
-    return Manifest(**data)
+    return Schema(**data)
 
 
 def _has_pair(cmd: list[str], flag: str, value: str) -> bool:
