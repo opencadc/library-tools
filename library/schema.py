@@ -1,27 +1,13 @@
-"""JSON Schema for CANFAR Library Tools manifest files."""
+"""Canonical JSON schema contract for CANFAR Library manifest files."""
 
 from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
-import re
 import shlex
-from typing import Any, Literal, cast
+from typing import Literal
 
-from yaml import safe_load, dump
-from pydantic import (
-    AnyUrl,
-    BaseModel,
-    ConfigDict,
-    Field,
-    FilePath,
-    field_validator,
-    model_validator,
-)
-
-ALLOWED_REGISTRY_HOSTS = {"images.canfar.net"}
-DISCOVERY_KINDS = ("notebook", "headless", "carta", "firefly", "contributed")
-TOOL_TOKEN_PATTERN = re.compile(r"{{\s*([a-zA-Z0-9_.-]+)\s*}}")
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field, FilePath
 
 
 class Author(BaseModel):
@@ -38,6 +24,12 @@ class Author(BaseModel):
         title="Email",
         description="Contact email address for the author.",
         examples=["john.doe@example.com"],
+    )
+    role: str = Field(
+        "maintainer",
+        title="Role",
+        description="Role of the author.",
+        examples=["maintainer", "contributor", "researcher", "developer"],
     )
     github: str | None = Field(
         None,
@@ -62,12 +54,6 @@ class Author(BaseModel):
         title="Affiliation",
         description="Affiliation of the author.",
         examples=["Oxford University"],
-    )
-    role: str = Field(
-        "maintainer",
-        title="Role",
-        description="Role of the author.",
-        examples=["maintainer", "contributor", "researcher", "developer"],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
@@ -144,10 +130,10 @@ class Build(BaseModel):
     def command(self) -> list[str]:
         """Build the docker buildx command for this build."""
         cmd = ["docker", "buildx", "build"]
-        dockerfile_path = Path(self.file)
-        if not dockerfile_path.is_absolute():
-            dockerfile_path = Path(self.context) / dockerfile_path
-        cmd.extend(["--file", str(dockerfile_path)])
+        dockerfile = Path(self.file)
+        if not dockerfile.is_absolute():
+            dockerfile = Path(self.context) / dockerfile
+        cmd.extend(["--file", str(dockerfile)])
         for tag in self.tags:
             cmd.extend(["--tag", tag])
         for platform in self.platforms:
@@ -198,19 +184,18 @@ class Discovery(BaseModel):
         ...,
         title="Version",
         description="Version of the packaged software.",
-        examples=["1.0.0"],
+        examples=["v1.2.3"],
     )
-    # Computed Field
     revision: str = Field(
         "unknown",
-        description="Source control revision identifier for the packaged software.",
+        title="Source Control Revision Checksum",
+        description="Automatically computed from git when building from source.",
         examples=["1234567890123456789012345678901234567890"],
     )
-    # Computed Field
     created: datetime = Field(
-        default=datetime.now(tz=datetime.now().astimezone().tzinfo),
+        ...,
         title="Created Timestamp",
-        description="Datetime on which the image was built. Conforming to RFC 3339.",
+        description="Datetime when metadata was processed.",
         examples=["2026-02-05T12:00:00Z"],
     )
     authors: list[Author] = Field(
@@ -222,13 +207,13 @@ class Discovery(BaseModel):
     licenses: str = Field(
         ...,
         title="Licenses",
-        description="License(s) under which contained software is distributed as an SPDX License Expression.",
-        examples=["AGPL-3.0", "AGPL-3.0-only", ""],
+        description="License(s) for software, as an SPDX License Expression.",
+        examples=["AGPL-3.0", "AGPL-3.0-only", "MIT OR Apache-2.0"],
     )
     keywords: list[str] = Field(
         ...,
         description="Keywords used to support software discovery and search.",
-        examples=["astronomy", "analysis", "python"],
+        examples=["polarization", "radio-astronomy", "calibration"],
     )
     domain: list[str] = Field(
         ["astronomy"],
@@ -241,13 +226,13 @@ class Discovery(BaseModel):
     ] = Field(
         ...,
         min_length=1,
-        description="Discovery kinds that classify this image.",
+        description="Classification of the software in the image.",
         examples=[["headless"], ["notebook", "headless"]],
     )
     tools: list[str] = Field(
-        default_factory=list,
-        description="Common tools included in the image.",
-        examples=["python", "jupyterlab", "astropy"],
+        ...,
+        description="Scientific Software packages included in the image.",
+        examples=["python", "jupyterlab", "astropy", "pyuvdata", "wsclean"],
     )
     deprecated: bool = Field(
         False,
@@ -279,7 +264,7 @@ class ToolInputs(BaseModel):
             "Input source for the tool. 'default' maps to built-in config shipped "
             "with the library; otherwise provide a local file path."
         ),
-        examples=["default", "./ci/.trivy.yaml"],
+        examples=["default", "./.trivy.yaml"],
     )
     destination: str = Field(
         "/config.yaml",
@@ -289,16 +274,6 @@ class ToolInputs(BaseModel):
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
-
-    @field_validator("destination")
-    @classmethod
-    def validate_destination_path(cls, value: str) -> str:
-        """Ensure destination is an absolute path in the container."""
-        if not value.startswith("/"):
-            raise ValueError(
-                "Tool input destination must be an absolute container path."
-            )
-        return value
 
 
 class Tool(BaseModel):
@@ -348,13 +323,13 @@ class Tool(BaseModel):
         ],
     )
     env: dict[str, str] = Field(
-        default_factory=dict,
+        {},
         title="Tool Environment",
         description="Environment variables passed to the tool container.",
         examples=[{"TRIVY_DEBUG": "true"}],
     )
     inputs: dict[str, ToolInputs] = Field(
-        default_factory=dict,
+        ...,
         title="Inputs",
         description="Tool inputs mounted into the tool container.",
     )
@@ -372,26 +347,6 @@ class Tool(BaseModel):
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
-    @model_validator(mode="after")
-    def validate_command_tokens(self) -> "Tool":
-        """Validate supported templated tokens used in command args."""
-        for part in self.command:
-            matches = TOOL_TOKEN_PATTERN.findall(part)
-            if ("{{" in part or "}}" in part) and not matches:
-                raise ValueError("Malformed template token in tool command.")
-            for token_name in matches:
-                if token_name == "image.reference":
-                    continue
-                if token_name.startswith("inputs."):
-                    input_name = token_name.split(".", maxsplit=1)[1]
-                    if input_name not in self.inputs:
-                        raise ValueError(
-                            f"Command references undefined input token: {token_name}"
-                        )
-                    continue
-                raise ValueError(f"Unsupported command token: {token_name}")
-        return self
-
 
 class Config(BaseModel):
     """Configuration for Library Tools execution and CLI wiring."""
@@ -405,46 +360,20 @@ class Config(BaseModel):
         description="Conflict handling mode for tooling behavior.",
     )
     tools: list[Tool] = Field(
-        default_factory=list,
+        ...,
         description="Tool definitions available to CLI steps.",
     )
     cli: dict[str, str] = Field(
-        default_factory=dict,
+        ...,
         description="CLI step name to tool id mapping.",
         examples=[{"scan": "default-scanner", "lint": "default-linter"}],
     )
 
     model_config = ConfigDict(extra="forbid", validate_assignment=True)
 
-    @model_validator(mode="after")
-    def validate_cli_mappings(self) -> "Config":
-        """Validate tool id uniqueness and CLI mapping targets."""
-        tool_ids = [tool.id for tool in self.tools]
-        unique_ids = set(tool_ids)
-        if len(unique_ids) != len(tool_ids):
-            raise ValueError("Tool ids must be unique in config.tools.")
-        if not self.tools and not self.cli:
-            return self
-        # Partial override semantics are enforced by tools.catalog.resolve().
-        # At schema-level, only validate mappings when tools are explicitly provided.
-        if not self.tools:
-            return self
-        unknown_targets = {
-            command: tool_id
-            for command, tool_id in self.cli.items()
-            if tool_id not in unique_ids
-        }
-        if unknown_targets:
-            missing = ", ".join(
-                f"{command}->{tool_id}"
-                for command, tool_id in sorted(unknown_targets.items())
-            )
-            raise ValueError(f"CLI mappings reference unknown tool ids: {missing}")
-        return self
 
-
-class Manifest(BaseModel):
-    """CANFAR Library Tools Schema."""
+class Schema(BaseModel):
+    """Canonical Library manifest schema contract."""
 
     version: Literal[1] = Field(1, description="Library manifest schema version.")
     registry: Registry = Field(..., title="Registry", description="Image registry.")
@@ -459,61 +388,14 @@ class Manifest(BaseModel):
         json_schema_serialization_defaults_required=True,
         json_schema_extra={
             "$schema": "https://json-schema.org/draft/2020-12/schema",
-            "$id": "https://raw.githubusercontent.com/opencadc/canfar-library/main/.spec.json",
+            "$id": "https://raw.githubusercontent.com/opencadc/library-tools/main/.spec.json",
             "title": "CANFAR Library Tools Schema",
-            "description": (
-                "Canonical schema for build intent, discovery metadata, and tool "
-                "configuration. Runtime defaults and layered override merging are "
-                "applied separately before validation."
-            ),
+            "description": ("Canonical schema for Library Tools manifest files."),
         },
     )
 
-    @classmethod
-    def from_yaml(cls, path: Path | str) -> "Manifest":
-        """Load a manifest from a YAML file.
-
-        Args:
-            path: Path to the manifest YAML file.
-
-        Returns:
-            Manifest model instance.
-        """
-        if isinstance(path, str):
-            path = Path(path)
-        with path.open("r", encoding="utf-8") as datafile:
-            data = safe_load(datafile)
-        if data is None:
-            data = {}
-        if not isinstance(data, dict):
-            raise ValueError("Manifest must be a dictionary.")
-        return cls(**cast(dict[str, Any], data))
-
-    @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "Manifest":
-        """Load a manifest from a dictionary.
-
-        Args:
-            data: Manifest data as a dictionary.
-
-        Returns:
-            Manifest model instance.
-        """
-        return cls(**data)
-
-    def save(self, path: Path = Path.cwd() / ".library.manifest.yaml") -> None:
-        """Save the manifest to a YAML file.
-
-        Args:
-            path: Path to the manifest YAML file.
-        """
-        payload = self.model_dump(mode="json", exclude_defaults=True)
-        with path.open("w", encoding="utf-8") as datafile:
-            dump(payload, datafile, sort_keys=False)
-
 
 if __name__ == "__main__":
-    # Emit the JSON Schema that downstream tools can consume.
     import json
 
-    print(json.dumps(Manifest.model_json_schema(), indent=2))
+    print(json.dumps(Schema.model_json_schema(), indent=2))
