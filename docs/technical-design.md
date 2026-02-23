@@ -84,8 +84,11 @@ Policy is layered and transparent:
 Tool catalog behavior:
 
 - Default: package-shipped tools/CLI mapping are used.
-- Manifest override: both `config.tools` and `config.cli` must be provided and replace defaults entirely.
-- Partial override is rejected.
+- Manifest implementation (`library/manifest.py`) inherits the canonical schema model.
+- Runtime defaults are materialized into manifests at creation/save time.
+- `config.tools` and `config.cli` are consumed as provided; deep merge semantics are not used.
+- Runtime validation for token and CLI mapping integrity is implemented in the manifest layer.
+- Canonical contract validation remains in `library/schema.py`.
 
 Each command should emit effective policy information to reduce ambiguity and simplify debugging.
 
