@@ -84,11 +84,14 @@ Policy is layered and transparent:
 Tool catalog behavior:
 
 - Default: package-shipped tools/CLI mapping are used.
-- Manifest implementation (`library/manifest.py`) inherits the canonical schema model.
-- Runtime defaults are materialized into manifests at creation/save time.
+- Runtime loading uses `library/schema.py`, and recommended defaults are
+  provided by `library/tools/defaults.py`.
+- Defaults are materialized into manifests at creation/save time.
 - `config.tools` and `config.cli` are consumed as provided; deep merge semantics are not used.
-- Runtime validation for token and CLI mapping integrity is implemented in the manifest layer.
-- Canonical contract validation remains in `library/schema.py`.
+- Token validation, CLI mapping integrity, duplicate tool-id checks, and
+  destination path checks are implemented in `library/schema.py`.
+- Canonical YAML load/save helpers (`from_yaml`, `from_dict`, `save`) are
+  implemented in `library/schema.py`.
 
 Each command should emit effective policy information to reduce ambiguity and simplify debugging.
 

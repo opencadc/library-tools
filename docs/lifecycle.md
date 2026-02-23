@@ -28,6 +28,8 @@ Execution behavior:
 - `library lint` defaults `--manifest` to `./.library.manifest.yaml`.
 - Runtime commands require a fully materialized manifest file.
 - Default tool definitions are written into the manifest during creation/save time.
+- Canonical schema validation and YAML load/save APIs are implemented in
+  `library/schema.py`.
 
 ## 3) Build
 

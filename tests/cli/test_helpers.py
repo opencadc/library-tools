@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from library.cli import helpers
-from library.manifest import Manifest
+from library.schema import Schema
 
 
 def test_helpers_read_dockerfile(tmp_path: Path) -> None:
@@ -51,7 +51,7 @@ def test_helpers_load_manifest(fixtures_dir: Path) -> None:
 
     manifest_model = helpers.load_manifest(manifest_path)
 
-    assert isinstance(manifest_model, Manifest)
+    assert isinstance(manifest_model, Schema)
     assert manifest_model.metadata.discovery.authors
 
 

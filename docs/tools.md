@@ -102,7 +102,7 @@ List of tool definitions. Each tool entry has:
 - `socket`: whether `/var/run/docker.sock` is mounted.
 - `outputs`: fixed literal `/outputs/`.
 
-`config.tools` is optional and defaults to `[]`.
+`config.tools` is required.
 
 ### `config.cli`
 
@@ -177,11 +177,11 @@ Examples:
    - `command`: logical command key (for example `scan`)
    - `image`: runtime image reference token value
    - `time`: run timestamp
-2. Runtime manifest lifecycle loads `manifest.Manifest` from YAML/dict:
-   - `manifest.Manifest` inherits `schema.Schema`.
-   - runtime defaults and validators are implemented in `library/manifest.py`.
-   - `library/schema.py` remains the canonical interoperability contract.
-   - compact manifests can be materialized once via `python -m library.manifest_migrate <path>`.
+2. Runtime manifest lifecycle loads `schema.Schema` from YAML/dict:
+   - `library/schema.py` is the canonical interoperability contract, including
+     invariant validation and YAML load/save helpers.
+   - recommended defaults are implemented in `library/tools/defaults.py`.
+   - runtime commands require a fully materialized manifest config.
 3. `library.tools.runner.run(context)` resolves:
    - `cli[command]` -> `tool.id`
    - `tool.id` -> `tools[]` entry

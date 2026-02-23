@@ -1,4 +1,4 @@
-"""Tests for runtime manifest implementation behavior."""
+"""Tests for schema runtime-loading behavior with defaults helpers."""
 
 from __future__ import annotations
 
@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 from yaml import safe_dump, safe_load
 
-from library import manifest
+from library.schema import Schema
+from library.tools import defaults
 
 
 def _custom_scan_tool(tool_id: str = "custom-scan") -> dict[str, object]:
@@ -26,7 +27,9 @@ def _custom_scan_tool(tool_id: str = "custom-scan") -> dict[str, object]:
     }
 
 
-def _minimal_manifest_payload(config: dict[str, object] | None = None) -> dict[str, object]:
+def _minimal_manifest_payload(
+    config: dict[str, object] | None = None,
+) -> dict[str, object]:
     payload: dict[str, object] = {
         "version": 1,
         "registry": {
@@ -69,8 +72,8 @@ def _write_manifest(path: Path, payload: dict[str, object]) -> None:
 
 def test_default_constructors_return_fresh_models() -> None:
     """Default constructors should return independent runtime models."""
-    left = manifest.default_config()
-    right = manifest.default_config()
+    left = defaults.default_config()
+    right = defaults.default_config()
 
     left.tools[0].image = "docker.io/example/other:1"
 
@@ -80,19 +83,19 @@ def test_default_constructors_return_fresh_models() -> None:
 def test_manifest_rejects_missing_config() -> None:
     """Runtime commands require fully materialized manifests."""
     with pytest.raises(ValueError):
-        manifest.Manifest.from_dict(_minimal_manifest_payload(config=None))
+        Schema.from_dict(_minimal_manifest_payload(config=None))
 
 
 def test_manifest_rejects_empty_config_block() -> None:
     """Compact config payloads should fail strict runtime loading."""
     with pytest.raises(ValueError):
-        manifest.Manifest.from_dict(_minimal_manifest_payload(config={}))
+        Schema.from_dict(_minimal_manifest_payload(config={}))
 
 
 def test_manifest_rejects_unknown_cli_mapping() -> None:
     """Runtime manifest should enforce command mapping integrity."""
     with pytest.raises(ValueError, match="unknown tool ids"):
-        manifest.Manifest.from_dict(
+        Schema.from_dict(
             _minimal_manifest_payload(
                 config={
                     "policy": "default",
@@ -107,7 +110,7 @@ def test_manifest_rejects_unknown_cli_mapping() -> None:
 def test_manifest_rejects_duplicate_tool_ids() -> None:
     """Runtime manifest should reject duplicate tool ids."""
     with pytest.raises(ValueError, match="must be unique"):
-        manifest.Manifest.from_dict(
+        Schema.from_dict(
             _minimal_manifest_payload(
                 config={
                     "policy": "default",
@@ -122,7 +125,7 @@ def test_manifest_rejects_duplicate_tool_ids() -> None:
 def test_manifest_validates_command_tokens() -> None:
     """Runtime manifest should validate templated command tokens."""
     with pytest.raises(ValueError, match="undefined input token"):
-        manifest.Manifest.from_dict(
+        Schema.from_dict(
             _minimal_manifest_payload(
                 config={
                     "policy": "default",
@@ -169,10 +172,14 @@ def test_manifest_normalizes_relative_input_source_from_yaml(tmp_path: Path) -> 
             "cli": {"scan": "default-scanner"},
         }
     )
-    payload["build"] = {"context": str(tmp_path), "file": "Dockerfile", "tags": ["latest"]}
+    payload["build"] = {
+        "context": str(tmp_path),
+        "file": "Dockerfile",
+        "tags": ["latest"],
+    }
     _write_manifest(manifest_path, payload)
 
-    model = manifest.Manifest.from_yaml(manifest_path)
+    model = Schema.from_yaml(manifest_path)
     source = model.config.tools[0].inputs["trivy"].source
 
     assert str(Path(str(source)).resolve()) == str(trivy_cfg.resolve())
@@ -208,10 +215,14 @@ def test_manifest_preserves_absolute_input_source_from_yaml(tmp_path: Path) -> N
             "cli": {"scan": "default-scanner"},
         }
     )
-    payload["build"] = {"context": str(tmp_path), "file": "Dockerfile", "tags": ["latest"]}
+    payload["build"] = {
+        "context": str(tmp_path),
+        "file": "Dockerfile",
+        "tags": ["latest"],
+    }
     _write_manifest(manifest_path, payload)
 
-    model = manifest.Manifest.from_yaml(manifest_path)
+    model = Schema.from_yaml(manifest_path)
     source = model.config.tools[0].inputs["trivy"].source
 
     assert str(source) == str(trivy_cfg.resolve())
@@ -219,8 +230,10 @@ def test_manifest_preserves_absolute_input_source_from_yaml(tmp_path: Path) -> N
 
 def test_manifest_save_writes_full_config_defaults(tmp_path: Path) -> None:
     """Manifest.save should always write materialized config defaults."""
-    model = manifest.Manifest.from_dict(
-        _minimal_manifest_payload(config=manifest.default_config().model_dump(mode="python"))
+    model = Schema.from_dict(
+        _minimal_manifest_payload(
+            config=defaults.default_config().model_dump(mode="python")
+        )
     )
     output = tmp_path / ".library.manifest.yaml"
 
@@ -231,5 +244,5 @@ def test_manifest_save_writes_full_config_defaults(tmp_path: Path) -> None:
     config = saved["config"]
     assert config["policy"] == "default"
     assert config["conflicts"] == "warn"
-    assert config["cli"] == manifest.default_cli()
+    assert config["cli"] == defaults.default_cli()
     assert len(config["tools"]) == 3

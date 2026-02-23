@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from library import manifest
+from library import schema
 from library.utils.console import console
 
 
@@ -22,7 +22,7 @@ def read_dockerfile(dockerfile_path: Path) -> str:
     return dockerfile_path.read_text(encoding="utf-8")
 
 
-def load_manifest(manifest_path: Path) -> manifest.Manifest:
+def load_manifest(manifest_path: Path) -> schema.Schema:
     """Load and validate a manifest file.
 
     Args:
@@ -32,7 +32,7 @@ def load_manifest(manifest_path: Path) -> manifest.Manifest:
         Manifest model instance.
     """
     console.print(f"[cyan]Reading Manifest: {manifest_path}[/cyan]")
-    return manifest.Manifest.from_yaml(manifest_path)
+    return schema.Schema.from_yaml(manifest_path)
 
 
 def resolve_dockerfile_contents(

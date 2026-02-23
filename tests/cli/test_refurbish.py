@@ -8,7 +8,7 @@ from pathlib import Path
 
 from yaml import safe_dump
 
-from library import manifest as runtime_manifest
+from library.tools import defaults as runtime_defaults
 from tests.cli.conftest import cli, skip_if_docker_unavailable
 
 
@@ -65,7 +65,7 @@ def _write_manifest(path: Path, dockerfile_path: Path) -> None:
                         "tools": ["python"],
                     }
                 },
-                "config": runtime_manifest.default_config().model_dump(mode="python"),
+                "config": runtime_defaults.default_config().model_dump(mode="python"),
             },
             sort_keys=False,
         ),

@@ -94,11 +94,12 @@ Tool backends (for example hadolint, trivy, and refurbish integrations) can be o
 
 Default/override behavior:
 
-- Runtime defaults are implemented in `library/manifest.py`.
-- `library init` and `Manifest.save()` materialize defaults into YAML.
+- Recommended defaults are implemented in `library/tools/defaults.py`.
+- `library init` and `Schema.save()` materialize defaults into YAML.
 - Runtime commands require a fully materialized manifest on disk.
 - `config.tools` and `config.cli` are used directly as provided (no deep merge).
-- The canonical contract in `library/schema.py` remains strict and runtime-neutral.
+- The canonical contract in `library/schema.py` owns schema validation, invariant
+  checks, and YAML load/save helpers.
 
 ## Roadmap Notes
 

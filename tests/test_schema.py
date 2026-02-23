@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
+from yaml import safe_load
 
 from library.schema import Schema
 
@@ -139,26 +142,141 @@ def test_registry_tags_not_part_of_schema_contract() -> None:
     assert model.registry.host == "images.canfar.net"
 
 
-def test_schema_does_not_validate_tool_command_tokens() -> None:
-    """Token validation belongs to runtime manifest implementation, not schema."""
+def test_schema_validates_tool_command_tokens() -> None:
+    """Schema rejects command templates that reference missing inputs."""
     payload = _minimal_schema_payload()
     payload["config"]["tools"][0]["command"] = ["{{inputs.missing}}"]
-    model = Schema(**payload)
+    with pytest.raises(ValueError, match="undefined input token"):
+        Schema(**payload)
 
-    assert model.config.tools[0].command == ["{{inputs.missing}}"]
 
-
-def test_schema_does_not_validate_cli_mappings() -> None:
-    """CLI mapping integrity validation belongs to runtime manifest implementation."""
+def test_schema_validates_cli_mappings() -> None:
+    """Schema rejects CLI mappings that target unknown tool ids."""
     payload = _minimal_schema_payload()
     payload["config"]["cli"] = {"scan": "missing-tool"}
-    model = Schema(**payload)
+    with pytest.raises(ValueError, match="unknown tool ids"):
+        Schema(**payload)
 
-    assert model.config.cli["scan"] == "missing-tool"
+
+def test_schema_rejects_duplicate_tool_ids() -> None:
+    """Schema rejects duplicate tool ids in config.tools."""
+    payload = _minimal_schema_payload()
+    payload["config"]["tools"] = [_default_scan_tool(), _default_scan_tool()]
+    payload["config"]["cli"] = {"scan": "default-scanner"}
+
+    with pytest.raises(ValueError, match="must be unique"):
+        Schema(**payload)
 
 
-def test_schema_exposes_no_runtime_io_helpers() -> None:
-    """Schema should not provide YAML load/save runtime helpers."""
-    assert not hasattr(Schema, "from_yaml")
-    assert not hasattr(Schema, "from_dict")
-    assert not hasattr(Schema, "save")
+def test_schema_from_dict_normalizes_relative_input_source(tmp_path: Path) -> None:
+    """Schema.from_dict resolves relative input source paths when base_dir is provided."""
+    local_input = tmp_path / "custom.trivy.yaml"
+    local_input.write_text("severity: HIGH\n", encoding="utf-8")
+
+    payload = _minimal_schema_payload(
+        config={
+            "tools": [
+                {
+                    **_default_scan_tool(),
+                    "inputs": {
+                        "trivy": {
+                            "source": "./custom.trivy.yaml",
+                            "destination": "/inputs/.trivy.yaml",
+                        }
+                    },
+                }
+            ],
+            "cli": {"scan": "default-scanner"},
+        }
+    )
+    model = Schema.from_dict(payload, base_dir=tmp_path)
+
+    source = model.config.tools[0].inputs["trivy"].source
+    assert str(Path(str(source)).resolve()) == str(local_input.resolve())
+
+
+def test_schema_from_yaml_normalizes_relative_input_source(tmp_path: Path) -> None:
+    """Schema.from_yaml resolves relative tool input paths from manifest directory."""
+    local_input = tmp_path / "custom.trivy.yaml"
+    local_input.write_text("severity: HIGH\n", encoding="utf-8")
+    manifest_path = tmp_path / "manifest.yaml"
+
+    manifest_path.write_text(
+        """
+version: 1
+registry:
+  host: images.canfar.net
+  project: library
+  image: schema-test
+build:
+  context: .
+  file: Dockerfile
+  tags:
+    - canfar-library/schema-test:latest
+metadata:
+  discovery:
+    title: Schema Test
+    description: Schema validation test image
+    source: https://github.com/opencadc/canfar-library
+    url: https://images.canfar.net/library/schema-test
+    documentation: https://canfar.net/docs/user-guide
+    version: "1.0.0"
+    revision: "1234567890123456789012345678901234567890"
+    created: "2026-02-05T12:00:00Z"
+    authors:
+      - name: Schema Test
+        email: schema-test@example.com
+    licenses: MIT
+    keywords:
+      - schema
+      - validation
+    domain:
+      - astronomy
+    kind:
+      - headless
+    tools:
+      - python
+config:
+  tools:
+    - id: default-scanner
+      parser: trivy
+      image: docker.io/aquasec/trivy:latest
+      command:
+        - trivy
+        - image
+        - --config
+        - "{{inputs.trivy}}"
+        - --format
+        - json
+        - --output
+        - /outputs/scan.json
+        - "{{image.reference}}"
+      inputs:
+        trivy:
+          source: ./custom.trivy.yaml
+          destination: /inputs/.trivy.yaml
+      socket: true
+      outputs: /outputs/
+  cli:
+    scan: default-scanner
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    model = Schema.from_yaml(manifest_path)
+
+    source = model.config.tools[0].inputs["trivy"].source
+    assert str(Path(str(source)).resolve()) == str(local_input.resolve())
+
+
+def test_schema_save_writes_materialized_yaml(tmp_path: Path) -> None:
+    """Schema.save writes a deterministic YAML payload."""
+    model = Schema(**_minimal_schema_payload())
+    output = tmp_path / "saved.manifest.yaml"
+
+    model.save(output)
+    saved = safe_load(output.read_text(encoding="utf-8"))
+
+    assert isinstance(saved, dict)
+    assert saved["version"] == 1
+    assert saved["config"]["policy"] == "default"

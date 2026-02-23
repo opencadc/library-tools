@@ -1,13 +1,13 @@
-"""Tests for runtime defaults exposed by manifest implementation."""
+"""Tests for runtime defaults exposed by tools.defaults."""
 
 from __future__ import annotations
 
-from library import manifest
+from library.tools import defaults
 
 
 def test_runtime_default_tools_include_lint_scan_refurbish() -> None:
-    """Manifest implementation should ship runtime default tool catalog."""
-    model = manifest.default_config()
+    """Defaults module should ship runtime default tool catalog."""
+    model = defaults.default_config()
 
     assert model.cli == {
         "lint": "default-linter",
@@ -20,7 +20,7 @@ def test_runtime_default_tools_include_lint_scan_refurbish() -> None:
 
 def test_runtime_default_hadolint_inputs_shape() -> None:
     """Hadolint runtime default should keep expected input destinations."""
-    model = manifest.default_config()
+    model = defaults.default_config()
     tool = next(tool for tool in model.tools if tool.id == "default-linter")
 
     assert tool.outputs == "/outputs/"

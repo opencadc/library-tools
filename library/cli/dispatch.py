@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import json
 
-from library import manifest as runtime_manifest
+from library import schema
 from library.cli import build
 from library.parsers import get as get_parser
 from library.tools import ToolRunContext, ToolRunResult, run as run_tool
@@ -59,7 +59,7 @@ def run_tool_command(
     verbose: bool,
 ) -> ToolDispatchResult:
     """Run a tool-backed command through shared manifest-driven dispatch."""
-    resolved_manifest = runtime_manifest.Manifest.from_yaml(manifest)
+    resolved_manifest = schema.Schema.from_yaml(manifest)
     tool = tool_resolve.for_command(resolved_manifest, command)
     docker.pull(tool.image, quiet=not verbose)
     console.print(f"[cyan]Running {tool.parser}...[/cyan]")
@@ -92,7 +92,7 @@ def run_tool_command(
 
 def run_validate(path: Path) -> None:
     """Run validate command through shared dispatcher adapter."""
-    runtime_manifest.Manifest.from_yaml(path)
+    schema.Schema.from_yaml(path)
     console.print("[green]✅ Manifest is valid.[/green]")
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from library import manifest as runtime_manifest
+from library import schema
 from library.schema import Tool, ToolInputs
 from library.tools import defaults, render, resolve, workspace
 from library.tools.models import ToolRunContext, ToolRunResult
@@ -58,7 +58,7 @@ def _build_volumes(
 def run(context: ToolRunContext) -> ToolRunResult:
     """Run a manifest-configured tool in Docker and return execution result."""
     manifest_path = context.manifest.resolve()
-    manifest_model = runtime_manifest.Manifest.from_yaml(manifest_path)
+    manifest_model = schema.Schema.from_yaml(manifest_path)
     tool = resolve.for_command(manifest_model, context.command)
 
     output_dir = workspace.create(

@@ -50,8 +50,12 @@ Both. The workflow is opinionated by default, but policy is configurable.
 
 Tool override contract:
 
-- If `config.tools` and `config.cli` are omitted (or empty), package defaults are used.
-- If either field is overridden, both must be provided together.
+- `library init` starts from package defaults and writes a fully materialized
+  manifest to disk.
+- Runtime commands and `library validate` expect a complete `config` block in
+  the manifest.
+- `config.tools` and `config.cli` are consumed as written in the manifest, with
+  no deep-merge behavior.
 
 ## Where can I run Library Tools?
 
@@ -66,7 +70,8 @@ Manifest discovery:
 
 - Canonical filename is `.library.manifest.yaml`.
 - `lint` and `refurbish` require a manifest (discovered from current directory or passed via `--manifest`).
-- `scan` can run without a manifest when an image argument is provided.
+- `scan` requires a manifest (discovered from current directory or passed via
+  `--manifest`) and an explicit image argument.
 
 ## How is metadata handled between manifest and Dockerfile?
 

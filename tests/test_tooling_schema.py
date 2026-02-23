@@ -52,10 +52,9 @@ def test_tool_inputs_source_allows_default_or_existing_file(tmp_path: Path) -> N
 
 
 def test_tool_inputs_destination_must_be_absolute() -> None:
-    """Destination path format checks are runtime-manifest concerns."""
-    item = ToolInputs(source="default", destination="config.yaml")
-
-    assert item.destination == "config.yaml"
+    """Destination path must be absolute at schema-validation time."""
+    with pytest.raises(ValueError, match="absolute container path"):
+        ToolInputs(source="default", destination="config.yaml")
 
 
 def test_tool_outputs_must_be_fixed() -> None:
@@ -66,8 +65,8 @@ def test_tool_outputs_must_be_fixed() -> None:
         Tool(**data)
 
 
-def test_command_tokens_are_not_validated_in_schema() -> None:
-    """Command token semantics are validated in runtime manifest implementation."""
+def test_command_tokens_are_validated_in_schema() -> None:
+    """Schema validates command token semantics."""
     data = _scan_tool()
     data["command"] = [
         "--config",
@@ -75,42 +74,38 @@ def test_command_tokens_are_not_validated_in_schema() -> None:
         "--output",
         "/outputs/out.json",
     ]
-    tool = Tool(**data)
+    with pytest.raises(ValueError, match="undefined input token"):
+        Tool(**data)
 
-    assert tool.command[1] == "{{inputs.missing}}"
 
-
-def test_unsupported_tokens_are_not_validated_in_schema() -> None:
-    """Unsupported token names are validated in runtime manifest implementation."""
+def test_unsupported_tokens_are_validated_in_schema() -> None:
+    """Schema rejects unsupported token names."""
     data = _scan_tool()
     data["command"] = ["--output", "{{outputs}}scan.json"]
-    tool = Tool(**data)
-
-    assert tool.command[1] == "{{outputs}}scan.json"
-
-
-def test_config_allows_cli_with_unknown_tool_ids() -> None:
-    """CLI mapping integrity checks run in runtime manifest implementation."""
-    config = Config(
-        policy="default",
-        conflicts="warn",
-        tools=[Tool(**_scan_tool())],
-        cli={"scan": "missing-tool"},
-    )
-
-    assert config.cli["scan"] == "missing-tool"
+    with pytest.raises(ValueError, match="Unsupported command token"):
+        Tool(**data)
 
 
-def test_config_allows_duplicate_tool_ids() -> None:
-    """Duplicate tool id checks run in runtime manifest implementation."""
-    config = Config(
-        policy="default",
-        conflicts="warn",
-        tools=[Tool(**_scan_tool()), Tool(**_scan_tool())],
-        cli={"scan": "scan-tool"},
-    )
+def test_config_rejects_cli_with_unknown_tool_ids() -> None:
+    """Schema rejects CLI mappings that target unknown tools."""
+    with pytest.raises(ValueError, match="unknown tool ids"):
+        Config(
+            policy="default",
+            conflicts="warn",
+            tools=[Tool(**_scan_tool())],
+            cli={"scan": "missing-tool"},
+        )
 
-    assert len(config.tools) == 2
+
+def test_config_rejects_duplicate_tool_ids() -> None:
+    """Schema rejects duplicate tool identifiers."""
+    with pytest.raises(ValueError, match="must be unique"):
+        Config(
+            policy="default",
+            conflicts="warn",
+            tools=[Tool(**_scan_tool()), Tool(**_scan_tool())],
+            cli={"scan": "scan-tool"},
+        )
 
 
 def test_config_requires_tools_and_cli_in_schema_contract() -> None:
