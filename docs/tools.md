@@ -125,7 +125,7 @@ Validation rules:
   - `config.tools` and `config.cli` are used directly as provided.
   - deep merge and tool-by-id patch semantics are not applied.
 
-## ToolInputs
+## Tool Inputs
 
 Each `tools[].inputs.<key>` entry contains:
 
