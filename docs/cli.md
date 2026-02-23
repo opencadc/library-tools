@@ -10,6 +10,9 @@ library --help
 
 ## Command Workflow
 
+For `lint`, `scan`, and `refurbish`, `--manifest` defaults to
+`./.library.manifest.yaml`. The file must exist and be readable.
+
 ### `init`
 
 Create a manifest that describes software, build intent, and metadata intent.
@@ -42,7 +45,6 @@ library build manifests/my-image.yaml -- --progress=plain
 Scan a container image for vulnerabilities.
 
 ```bash
-library scan images.canfar.net/library/my-image:1.0
 library scan images.canfar.net/library/my-image:1.0 --manifest manifests/my-image.yaml
 ```
 
@@ -92,9 +94,11 @@ Tool backends (for example hadolint, trivy, and refurbish integrations) can be o
 
 Default/override behavior:
 
-- If manifest `config.tools` and `config.cli` are both omitted (or empty), package defaults are used.
-- If both are provided, manifest definitions replace package defaults.
-- Partial override (only one provided) is invalid.
+- Runtime defaults are implemented in `library/manifest.py`.
+- `library init` and `Manifest.save()` materialize defaults into YAML.
+- Runtime commands require a fully materialized manifest on disk.
+- `config.tools` and `config.cli` are used directly as provided (no deep merge).
+- The canonical contract in `library/schema.py` remains strict and runtime-neutral.
 
 ## Roadmap Notes
 

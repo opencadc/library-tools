@@ -7,5 +7,4 @@ __all__ = [
     "dispatch",
     "helpers",
     "main",
-    "manifest",
 ]

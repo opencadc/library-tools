@@ -25,9 +25,9 @@ Users can override defaults using repository policy files, tool-specific config 
 
 Execution behavior:
 
-- `library lint` discovers `./.library.manifest.yaml` by default (or accepts `--manifest`).
-- If manifest tool override is not provided, package default tool definitions are used.
-- If manifest override is provided, both `config.tools` and `config.cli` must be present.
+- `library lint` defaults `--manifest` to `./.library.manifest.yaml`.
+- Runtime commands require a fully materialized manifest file.
+- Default tool definitions are written into the manifest during creation/save time.
 
 ## 3) Build
 
@@ -42,8 +42,9 @@ Advanced users can pass extra buildx arguments via passthrough (`-- <args>`), wh
 Execution behavior:
 
 - `scan` requires an explicit target image argument.
-- `scan` accepts optional `--manifest` for override configuration.
-- If no manifest is found/provided, `scan` still runs with package defaults.
+- `scan` requires a manifest. If you omit `--manifest`, the CLI uses
+  `./.library.manifest.yaml`.
+- `scan` validates and uses the manifest file directly with no command-time default fill.
 
 ## 5) Refurbish (Dependency Modernization)
 
@@ -51,7 +52,7 @@ Execution behavior:
 
 Execution behavior:
 
-- `refurbish` discovers `./.library.manifest.yaml` by default (or accepts `--manifest`).
+- `refurbish` defaults `--manifest` to `./.library.manifest.yaml`.
 - Backend parser identifier remains `renovate` for now.
 
 ## 6) Curate (Metadata + Artifact Packaging)

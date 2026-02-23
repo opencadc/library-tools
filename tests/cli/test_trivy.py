@@ -5,26 +5,21 @@ from __future__ import annotations
 
 from yaml import safe_dump
 
+from library import manifest as runtime_manifest
 from library.utils import docker
 from tests.cli.conftest import cli, skip_if_docker_unavailable
 
 
 def test_library_scan_reports_results(cli_runner, tmp_path) -> None:
-    """Scan an image and report results using JSON output."""
-    skip_if_docker_unavailable()
-    docker.pull("docker.io/library/alpine:3.19", quiet=True)
-
+    """Scan should fail when no manifest is provided or discoverable."""
     result = cli_runner.invoke(
         cli,
         ["scan", "docker.io/library/alpine:3.19"],
     )
 
-    assert result.exit_code in {0, 1}
-    assert "Trivy" in result.stdout
-    if "Trivy vulnerabilities found" in result.stdout:
-        assert result.exit_code == 1
-    if "Trivy: No vulnerabilities found." in result.stdout:
-        assert result.exit_code == 0
+    assert result.exit_code == 2
+    assert isinstance(result.exception, SystemExit)
+    assert result.exception.code == 2
 
 
 def test_library_scan_accepts_manifest_override(
@@ -70,9 +65,10 @@ def test_library_scan_accepts_manifest_override(
                         "keywords": ["sample", "testing"],
                         "domain": ["astronomy"],
                         "kind": ["headless"],
+                        "tools": ["python"],
                     }
                 },
-                "config": {},
+                "config": runtime_manifest.default_config().model_dump(mode="python"),
             },
             sort_keys=False,
         ),

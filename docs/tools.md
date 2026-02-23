@@ -10,11 +10,16 @@ Runtime scaffolding is now wired into CLI commands:
 - `library scan`
 - `library refurbish`
 
+Command dispatch is centralized in `library/cli/dispatch.py`. Each command now
+resolves an effective manifest, resolves command-to-tool mapping, runs the
+tool container, then routes outputs through the built-in parser registry in
+`library/parsers/__init__.py`.
+
 ## Phase 2 Hadolint Refactor
 
 Hadolint is now wired through the generic tool runner.
 
-- CLI entrypoint: `library/cli/hadolint.py`
+- CLI entrypoint: `library/cli/main.py` (via `library/cli/dispatch.py`)
 - Runner call: `library.tools.run(ToolRunContext(...))`
 - Parser module: `library/parsers/hadolint.py`
 - Parser API:
@@ -27,13 +32,12 @@ Parser modules now live under `library/parsers` and are imported as:
 from library.parsers import hadolint
 ```
 
-Manifest discovery for `library lint`:
+Manifest path behavior for `library lint`:
 
 - Canonical manifest filename: `.library.manifest.yaml`
 - Optional override: `library lint --manifest <path>`
-- Default behavior: if `--manifest` is omitted, CLI searches current directory for:
-  - `.library.manifest.yaml`
-  - `.library.manifest.yml`
+- Default behavior: if `--manifest` is omitted, CLI uses
+  `./.library.manifest.yaml`.
 
 For hadolint, the manifest `build.context` + `build.file` resolve the Dockerfile path.
 That Dockerfile is mounted into the container as `/inputs/Dockerfile`.
@@ -109,16 +113,17 @@ Example:
 - `scan: default-scanner`
 - `lint: default-linter`
 
-`config.cli` is optional and defaults to `{}`.
+`config.cli` is required.
 
 Validation rules:
 
 - every tool id in `config.tools` must be unique.
 - every `config.cli` target must reference an existing tool id.
 - catalog selection behavior:
-  - if both `config.tools` and `config.cli` are empty: package defaults are used.
-  - if both are non-empty: manifest override replaces package defaults.
-  - if only one is non-empty: command execution fails (partial override is invalid).
+  - runtime commands require a fully materialized config block in the manifest.
+  - defaults are materialized when manifests are created/saved.
+  - `config.tools` and `config.cli` are used directly as provided.
+  - deep merge and tool-by-id patch semantics are not applied.
 
 ## ToolInputs
 
@@ -172,10 +177,12 @@ Examples:
    - `command`: logical command key (for example `scan`)
    - `image`: runtime image reference token value
    - `time`: run timestamp
-2. `library.tools.runner.run(context)` loads manifest and resolves effective catalog:
-   - defaults from `library/default.py` when no override is provided.
-   - manifest override when both `config.tools` and `config.cli` are provided.
-3. Runner resolves:
+2. Runtime manifest lifecycle loads `manifest.Manifest` from YAML/dict:
+   - `manifest.Manifest` inherits `schema.Schema`.
+   - runtime defaults and validators are implemented in `library/manifest.py`.
+   - `library/schema.py` remains the canonical interoperability contract.
+   - compact manifests can be materialized once via `python -m library.manifest_migrate <path>`.
+3. `library.tools.runner.run(context)` resolves:
    - `cli[command]` -> `tool.id`
    - `tool.id` -> `tools[]` entry
 4. Runner computes run directory:

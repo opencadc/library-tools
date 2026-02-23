@@ -7,6 +7,7 @@ from pathlib import Path
 import json
 import typer
 
+from library import DEFAULT_LIBRARY_MANIFEST_FILENAME
 from library.cli import dispatch
 from library.utils.console import console
 
@@ -40,11 +41,16 @@ cli: typer.Typer = typer.Typer(
 
 @cli.command("lint", help="Check Dockerfile for best practices.")
 def linter(
-    manifest: Path | None = typer.Option(
-        None,
+    manifest: Path = typer.Option(
+        Path(DEFAULT_LIBRARY_MANIFEST_FILENAME),
         "--manifest",
         "-m",
         help=("Path to library manifest file."),
+        exists=True,
+        readable=True,
+        file_okay=True,
+        dir_okay=False,
+        resolve_path=True,
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output."
@@ -58,8 +64,8 @@ def linter(
     """
     dispatched = dispatch.run_tool_command(
         "lint",
-        manifest_path=manifest,
-        image_reference=None,
+        manifest=manifest,
+        image=None,
         verbose=verbose,
     )
     exit_code = dispatched.result.exit_code
@@ -73,11 +79,16 @@ def linter(
 @cli.command("scan", help="Check Container Image for CVEs.")
 def scanner(
     image: str = typer.Argument(..., help="Docker image to scan."),
-    manifest: Path | None = typer.Option(
-        None,
+    manifest: Path = typer.Option(
+        Path(DEFAULT_LIBRARY_MANIFEST_FILENAME),
         "--manifest",
         "-m",
         help=("Path to library manifest file."),
+        exists=True,
+        readable=True,
+        file_okay=True,
+        dir_okay=False,
+        resolve_path=True,
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output."
@@ -92,8 +103,8 @@ def scanner(
     """
     dispatched = dispatch.run_tool_command(
         "scan",
-        manifest_path=manifest,
-        image_reference=image,
+        manifest=manifest,
+        image=image,
         verbose=verbose,
     )
     exit_code = dispatched.result.exit_code
@@ -102,11 +113,16 @@ def scanner(
 
 @cli.command("refurbish", help="Find outdated dependencies.")
 def refurbisher(
-    manifest: Path | None = typer.Option(
-        None,
+    manifest: Path = typer.Option(
+        Path(DEFAULT_LIBRARY_MANIFEST_FILENAME),
         "--manifest",
         "-m",
         help=("Path to library manifest file."),
+        exists=True,
+        readable=True,
+        file_okay=True,
+        dir_okay=False,
+        resolve_path=True,
     ),
     verbose: bool = typer.Option(
         False, "--verbose", "-v", help="Enable verbose output."
@@ -124,8 +140,8 @@ def refurbisher(
     """
     dispatched = dispatch.run_tool_command(
         "refurbish",
-        manifest_path=manifest,
-        image_reference=None,
+        manifest=manifest,
+        image=None,
         verbose=verbose,
     )
     if jsonify:

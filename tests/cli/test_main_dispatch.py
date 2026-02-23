@@ -19,7 +19,7 @@ def test_cli_main_does_not_import_tool_wrapper_modules() -> None:
 
 def test_lint_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
     """Lint command should dispatch directly with lint command key."""
-    calls: list[tuple[str, Path | None, str | None, bool]] = []
+    calls: list[tuple[str, Path, str | None, bool]] = []
 
     class _Result:
         exit_code = 0
@@ -28,8 +28,8 @@ def test_lint_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
         result = _Result()
         payload = {}
 
-    def fake_run_tool_command(command, *, manifest_path, image_reference, verbose):
-        calls.append((command, manifest_path, image_reference, verbose))
+    def fake_run_tool_command(command, *, manifest, image, verbose):
+        calls.append((command, manifest, image, verbose))
         return _Dispatched()
 
     monkeypatch.setattr(cli_main.dispatch, "run_tool_command", fake_run_tool_command)
@@ -45,7 +45,7 @@ def test_lint_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
 
 def test_scan_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
     """Scan command should dispatch directly with scan command key."""
-    calls: list[tuple[str, Path | None, str | None, bool]] = []
+    calls: list[tuple[str, Path, str | None, bool]] = []
 
     class _Result:
         exit_code = 1
@@ -54,8 +54,8 @@ def test_scan_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
         result = _Result()
         payload = {}
 
-    def fake_run_tool_command(command, *, manifest_path, image_reference, verbose):
-        calls.append((command, manifest_path, image_reference, verbose))
+    def fake_run_tool_command(command, *, manifest, image, verbose):
+        calls.append((command, manifest, image, verbose))
         return _Dispatched()
 
     monkeypatch.setattr(cli_main.dispatch, "run_tool_command", fake_run_tool_command)
@@ -79,7 +79,7 @@ def test_scan_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
 
 def test_refurbish_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
     """Refurbish command should dispatch directly and emit JSON from payload."""
-    calls: list[tuple[str, Path | None, str | None, bool]] = []
+    calls: list[tuple[str, Path, str | None, bool]] = []
 
     class _Result:
         exit_code = 0
@@ -88,8 +88,8 @@ def test_refurbish_calls_dispatch_directly(monkeypatch, tmp_path: Path) -> None:
         result = _Result()
         payload = {"updates": []}
 
-    def fake_run_tool_command(command, *, manifest_path, image_reference, verbose):
-        calls.append((command, manifest_path, image_reference, verbose))
+    def fake_run_tool_command(command, *, manifest, image, verbose):
+        calls.append((command, manifest, image, verbose))
         return _Dispatched()
 
     monkeypatch.setattr(cli_main.dispatch, "run_tool_command", fake_run_tool_command)

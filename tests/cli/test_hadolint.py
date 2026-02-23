@@ -6,6 +6,7 @@ from pathlib import Path
 
 from yaml import safe_dump
 
+from library import manifest as runtime_manifest
 from tests.cli.conftest import cli, skip_if_docker_unavailable
 
 
@@ -42,9 +43,10 @@ def _write_manifest(path: Path, dockerfile: Path) -> None:
                 "keywords": ["sample", "testing"],
                 "domain": ["astronomy"],
                 "kind": ["headless"],
+                "tools": ["python"],
             }
         },
-        "config": {},
+        "config": runtime_manifest.default_config().model_dump(mode="python"),
     }
     path.write_text(safe_dump(payload, sort_keys=False), encoding="utf-8")
 
@@ -102,6 +104,6 @@ def test_library_hadolint_fails_when_manifest_missing(cli_runner) -> None:
     with cli_runner.isolated_filesystem():
         result = cli_runner.invoke(cli, ["lint"])
 
-    assert result.exit_code != 0
-    assert result.exception is not None
-    assert "No manifest provided" in str(result.exception)
+    assert result.exit_code == 2
+    assert isinstance(result.exception, SystemExit)
+    assert result.exception.code == 2
