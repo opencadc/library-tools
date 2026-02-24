@@ -811,7 +811,7 @@ wheels = [
 
 [[package]]
 name = "richforms"
-version = "0.4.0"
+version = "0.5.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
@@ -819,9 +819,9 @@ dependencies = [
     { name = "rich" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/aa/f23f1e44175e51bc977375c506e27a4b6c8ecadb9b5f9f73c64f595b9cce/richforms-0.4.0.tar.gz", hash = "sha256:6901522b4505887ccbc542d8d0ae48e50b8c517691a3a17e9663e6b101797c0e", size = 77053, upload-time = "2026-02-20T08:21:16.059Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/ef/53aeea76c6e47970d72a6562a78297f727c6e738a7c4b161631f96429e2c/richforms-0.5.1.tar.gz", hash = "sha256:e81afb1a2184568b362dfdd638766ccf15348b03ef78731889fa4ff77e8fee24", size = 79312, upload-time = "2026-02-24T19:51:42.663Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/01/1c7c4c0e639a5b10b60f52edd8da2015a4797b0b59f688084bce352146a4/richforms-0.4.0-py3-none-any.whl", hash = "sha256:655e55613d7382f4dae4d915dde2cc7710f81c357b1d9d517bafdb5b17a6ad83", size = 18193, upload-time = "2026-02-20T08:21:14.548Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/f8/1811de0fead6bc77afdbe5a79bb89b22ca6456b11218ff537c5165a0b63b/richforms-0.5.1-py3-none-any.whl", hash = "sha256:9e036a73e10264f18d2be90483deaca3b98f5ff06564dbc50a5130e77c383aba", size = 19043, upload-time = "2026-02-24T19:51:41.235Z" },
 ]
 
 [[package]]
@@ -958,7 +958,7 @@ wheels = [
 
 [[package]]
 name = "virtualenv"
-version = "20.38.0"
+version = "20.39.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "distlib" },
@@ -966,9 +966,9 @@ dependencies = [
     { name = "platformdirs" },
     { name = "typing-extensions", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d2/03/a94d404ca09a89a7301a7008467aed525d4cdeb9186d262154dd23208709/virtualenv-20.38.0.tar.gz", hash = "sha256:94f39b1abaea5185bf7ea5a46702b56f1d0c9aa2f41a6c2b8b0af4ddc74c10a7", size = 5864558, upload-time = "2026-02-19T07:48:02.385Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ed/54/809199edc537dbace273495ac0884d13df26436e910a5ed4d0ec0a69806b/virtualenv-20.39.0.tar.gz", hash = "sha256:a15f0cebd00d50074fd336a169d53422436a12dfe15149efec7072cfe817df8b", size = 5869141, upload-time = "2026-02-23T18:09:13.349Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/42/d7/394801755d4c8684b655d35c665aea7836ec68320304f62ab3c94395b442/virtualenv-20.38.0-py3-none-any.whl", hash = "sha256:d6e78e5889de3a4742df2d3d44e779366325a90cf356f15621fddace82431794", size = 5837778, upload-time = "2026-02-19T07:47:59.778Z" },
+    { url = "https://files.pythonhosted.org/packages/f7/b4/8268da45f26f4fe84f6eae80a6ca1485ffb490a926afecff75fc48f61979/virtualenv-20.39.0-py3-none-any.whl", hash = "sha256:44888bba3775990a152ea1f73f8e5f566d49f11bbd1de61d426fd7732770043e", size = 5839121, upload-time = "2026-02-23T18:09:11.173Z" },
 ]
 
 [[package]]
