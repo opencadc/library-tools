@@ -51,14 +51,14 @@ repos:
     - id: radon
       name: radon
       entry: radon
-      verbose: true
+      verbose: false
       language: python
       additional_dependencies: [radon]
       args: ["cc", "--min=B","--total-average"]
     - id: radon-hal
       name: radon halstead
       entry: radon
-      verbose: true
+      verbose: false
       language: python
       additional_dependencies: [radon]
       pass_filenames: false
@@ -66,7 +66,7 @@ repos:
     - id: radon-mi
       name: radon maintainability
       entry: radon
-      verbose: true
+      verbose: false
       language: python
       additional_dependencies: [radon]
       pass_filenames: false
