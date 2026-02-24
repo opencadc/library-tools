@@ -1,0 +1,11 @@
+# Exclude all files from the build context by default.
+**
+
+# Keep only files required by the Dockerfile build/install steps.
+!.dockerignore
+!Dockerfile
+!pyproject.toml
+!README.md
+!uv.lock
+!library/
+!library/**
