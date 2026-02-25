@@ -9,6 +9,7 @@ import typer
 
 from library import DEFAULT_LIBRARY_MANIFEST_FILENAME
 from library.cli import dispatch
+from library.cli import init as cli_init
 from library.utils.console import console
 
 
@@ -76,16 +77,34 @@ def linter(
     raise typer.Exit(exit_code)
 
 
+@cli.command("init", help="Create a manifest interactively.")
+def initializer(
+    output: Path = typer.Option(
+        Path(DEFAULT_LIBRARY_MANIFEST_FILENAME),
+        "--output",
+        "-o",
+        help="Output path for the manifest file.",
+        file_okay=True,
+        dir_okay=False,
+        writable=True,
+        resolve_path=True,
+    ),
+) -> None:
+    """Collect and save a fully materialized manifest."""
+    cli_init.run_init(output)
+
+
 @cli.command("scan", help="Check Container Image for CVEs.")
 def scanner(
-    image: str = typer.Argument(..., help="Docker image to scan."),
+    image: str | None = typer.Argument(
+        None,
+        help="Docker image to scan. If omitted, derive from manifest defaults.",
+    ),
     manifest: Path = typer.Option(
         Path(DEFAULT_LIBRARY_MANIFEST_FILENAME),
         "--manifest",
         "-m",
         help=("Path to library manifest file."),
-        exists=True,
-        readable=True,
         file_okay=True,
         dir_okay=False,
         resolve_path=True,
@@ -97,16 +116,19 @@ def scanner(
     """Run Trivy against a Docker image.
 
     Args:
-        image: Docker image to scan.
+        image: Docker image to scan, if provided.
         manifest: Path to optional manifest file.
         verbose: Whether to emit verbose output.
     """
-    dispatched = dispatch.run_tool_command(
-        "scan",
-        manifest=manifest,
-        image=image,
-        verbose=verbose,
-    )
+    try:
+        dispatched = dispatch.run_scan_command(
+            manifest=manifest,
+            image=image,
+            verbose=verbose,
+        )
+    except ValueError as exc:
+        console.print(f"[red]❌ {exc}[/red]")
+        raise typer.Exit(2) from exc
     exit_code = dispatched.result.exit_code
     raise typer.Exit(exit_code)
 
@@ -164,14 +186,27 @@ def validator(path: Path) -> None:
     help="Build a container image with buildx.",
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
 )
-def builder(ctx: typer.Context, path: Path) -> None:
+def builder(
+    ctx: typer.Context,
+    manifest: Path = typer.Option(
+        Path(DEFAULT_LIBRARY_MANIFEST_FILENAME),
+        "--manifest",
+        "-m",
+        help=("Path to library manifest file."),
+        exists=True,
+        readable=True,
+        file_okay=True,
+        dir_okay=False,
+        resolve_path=True,
+    ),
+) -> None:
     """Build a container image using the manifest defaults.
 
     Args:
         ctx: Typer context for extra args.
-        path: Path to the manifest file.
+        manifest: Path to the manifest file.
     """
-    exit_code = dispatch.run_build(path, list(ctx.args))
+    exit_code = dispatch.run_build(manifest, list(ctx.args))
     raise typer.Exit(exit_code)
 
 

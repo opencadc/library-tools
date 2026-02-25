@@ -50,6 +50,23 @@ def _append_options(existing: str, extra: list[str]) -> str:
     return f"{existing} {extra_str}"
 
 
+def _resolve_build_tags(manifest: schema.Schema) -> list[str]:
+    """Resolve plain manifest tags into fully qualified image references."""
+    prefix = (
+        f"{manifest.registry.host}/"
+        f"{manifest.registry.project}/"
+        f"{manifest.registry.image}"
+    )
+    resolved: list[str] = []
+    for tag in manifest.build.tags:
+        # Preserve explicit image references for backward compatibility.
+        if any(marker in tag for marker in ("/", ":", "@")):
+            resolved.append(tag)
+            continue
+        resolved.append(f"{prefix}:{tag}")
+    return resolved
+
+
 def run_build(manifest_path: Path, extra_args: list[str]) -> int:
     """Run docker buildx build using the manifest defaults.
 
@@ -69,6 +86,7 @@ def run_build(manifest_path: Path, extra_args: list[str]) -> int:
         console.print(f"[red]❌ build options cannot include {overlap}.[/red]")
         return 2
 
+    manifest.build.tags = _resolve_build_tags(manifest)
     manifest.build.options = _append_options(manifest.build.options, extra_args)
     result = subprocess.run(manifest.build.command(), check=False)
     return result.returncode

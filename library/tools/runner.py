@@ -16,7 +16,7 @@ DOCKER_SOCKET_PATH = "/var/run/docker.sock"
 
 def _resolve_input_source(
     *,
-    manifest: Path,
+    manifest: Path | None,
     tool: Tool,
     input_key: str,
     input_config: ToolInputs,
@@ -27,6 +27,10 @@ def _resolve_input_source(
 
     source_path = Path(str(input_config.source))
     if not source_path.is_absolute():
+        if manifest is None:
+            raise ValueError(
+                "Relative input source requires a manifest path for resolution."
+            )
         source_path = manifest.parent / source_path
     source_path = source_path.resolve()
     if not source_path.is_file():
@@ -35,7 +39,7 @@ def _resolve_input_source(
 
 
 def _build_volumes(
-    *, manifest: Path, tool: Tool, output_dir: Path
+    *, manifest: Path | None, tool: Tool, output_dir: Path
 ) -> dict[str, dict[str, str]]:
     """Build Docker volume bindings for outputs, inputs, and optional socket."""
     volumes: dict[str, dict[str, str]] = {
@@ -57,12 +61,29 @@ def _build_volumes(
 
 def run(context: ToolRunContext) -> ToolRunResult:
     """Run a manifest-configured tool in Docker and return execution result."""
-    manifest_path = context.manifest.resolve()
-    manifest_model = schema.Schema.from_yaml(manifest_path)
-    tool = resolve.for_command(manifest_model, context.command)
+    manifest_path = (
+        context.manifest.expanduser().resolve()
+        if context.manifest is not None
+        else None
+    )
+    tool = context.tool
+    if tool is None:
+        if manifest_path is None:
+            raise ValueError(
+                "Tool execution requires a manifest path when tool config is not provided."
+            )
+        manifest_model = schema.Schema.from_yaml(manifest_path)
+        tool = resolve.for_command(manifest_model, context.command)
+    output_root = (
+        context.output_root.expanduser().resolve()
+        if context.output_root is not None
+        else manifest_path.parent
+        if manifest_path is not None
+        else Path.cwd().resolve()
+    )
 
     output_dir = workspace.create(
-        root=manifest_path.parent,
+        root=output_root,
         tool_id=tool.id,
         run_time=context.time,
     )

@@ -10,6 +10,7 @@ import json
 from library import schema
 from library.cli import build
 from library.parsers import get as get_parser
+from library.tools import defaults as runtime_defaults
 from library.tools import ToolRunContext, ToolRunResult, run as run_tool
 from library.tools import resolve as tool_resolve
 from library.utils import docker
@@ -51,16 +52,16 @@ def _default_image_reference(command: str) -> str:
     return f"unused-for-{command}"
 
 
-def run_tool_command(
+def _run_resolved_tool_command(
     command: str,
     *,
-    manifest: Path,
-    image: str | None,
+    tool: schema.Tool,
+    manifest: Path | None,
+    image: str,
     verbose: bool,
+    output_root: Path | None = None,
 ) -> ToolDispatchResult:
-    """Run a tool-backed command through shared manifest-driven dispatch."""
-    resolved_manifest = schema.Schema.from_yaml(manifest)
-    tool = tool_resolve.for_command(resolved_manifest, command)
+    """Execute a pre-resolved tool and parse/report its outputs."""
     docker.pull(tool.image, quiet=not verbose)
     console.print(f"[cyan]Running {tool.parser}...[/cyan]")
 
@@ -68,8 +69,10 @@ def run_tool_command(
         ToolRunContext(
             manifest=manifest,
             command=command,
-            image=image or _default_image_reference(command),
+            image=image,
             time=datetime.now(timezone.utc),
+            tool=tool,
+            output_root=output_root,
         )
     )
     _ensure_artifacts(tool.parser, Path(result.output), result.stdout)
@@ -87,6 +90,73 @@ def run_tool_command(
         parser=tool.parser,
         payload=payload,
         result=result,
+    )
+
+
+def run_tool_command(
+    command: str,
+    *,
+    manifest: Path,
+    image: str | None,
+    verbose: bool,
+) -> ToolDispatchResult:
+    """Run a tool-backed command through shared manifest-driven dispatch."""
+    resolved_manifest = schema.Schema.from_yaml(manifest)
+    tool = tool_resolve.for_command(resolved_manifest, command)
+    return _run_resolved_tool_command(
+        command,
+        tool=tool,
+        manifest=manifest,
+        image=image or _default_image_reference(command),
+        verbose=verbose,
+    )
+
+
+def _manifest_scan_image_reference(manifest_model: schema.Schema) -> str:
+    """Build a default scan image reference from manifest registry and first tag."""
+    tag = manifest_model.build.tags[0]
+    return (
+        f"{manifest_model.registry.host}/"
+        f"{manifest_model.registry.project}/"
+        f"{manifest_model.registry.image}:{tag}"
+    )
+
+
+def run_scan_command(
+    *,
+    manifest: Path,
+    image: str | None,
+    verbose: bool,
+) -> ToolDispatchResult:
+    """Run scan with manifest defaults, explicit image, or image-only fallback."""
+    manifest_path = manifest.expanduser().resolve()
+
+    if manifest_path.is_file():
+        manifest_model = schema.Schema.from_yaml(manifest_path)
+        resolved_image = image or _manifest_scan_image_reference(manifest_model)
+        tool = tool_resolve.for_command(manifest_model, "scan")
+        return _run_resolved_tool_command(
+            "scan",
+            tool=tool,
+            manifest=manifest_path,
+            image=resolved_image,
+            verbose=verbose,
+        )
+
+    if image is None:
+        raise ValueError(
+            "No manifest file found and no image provided. "
+            "Pass IMAGE or create a manifest with `library init`."
+        )
+
+    fallback_tool = runtime_defaults.DEFAULT_TRIVY_TOOL.model_copy(deep=True)
+    return _run_resolved_tool_command(
+        "scan",
+        tool=fallback_tool,
+        manifest=None,
+        image=image,
+        verbose=verbose,
+        output_root=Path.cwd(),
     )
 
 

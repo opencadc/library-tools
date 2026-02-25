@@ -127,12 +127,14 @@ def _resolve_manifest_dockerfile(path: Path) -> Path:
     return dockerfile
 
 
-def input(tool: Tool, input_key: str, manifest: Path) -> Path:
+def input(tool: Tool, input_key: str, manifest: Path | None) -> Path:
     """Resolve packaged default input path for a tool input key."""
     if input_key not in tool.inputs:
         raise ValueError(f"Input key not defined for tool '{tool.id}': {input_key}")
 
     if input_key == "dockerfile":
+        if manifest is None:
+            raise ValueError("Default dockerfile input requires a manifest path.")
         return _resolve_manifest_dockerfile(manifest)
 
     default_path = DEFAULT_INPUT_REGISTRY.get(input_key)

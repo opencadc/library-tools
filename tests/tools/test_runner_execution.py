@@ -9,6 +9,7 @@ from pathlib import Path
 import pytest
 from yaml import safe_dump
 
+from library import schema
 from library.tools.models import ToolRunContext
 from library.tools.runner import run
 from library.utils import runtime as docker_runtime
@@ -115,7 +116,8 @@ def test_runner_executes_tool_with_default_input(tmp_path: Path) -> None:
     assert result.tool == "default-scanner"
     assert result.exit_code == 0
     assert (
-        result.output == tmp_path / "outputs" / "default-scanner" / "20260218T200000Z"
+        result.output
+        == tmp_path / ".library-tool-outputs" / "default-scanner" / "20260218T200000Z"
     )
     artifact = result.output / "example.json"
     assert artifact.exists()
@@ -169,7 +171,8 @@ def test_runner_executes_tool_with_local_input_override(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert (
-        result.output == tmp_path / "outputs" / "default-scanner" / "20260218T200500Z"
+        result.output
+        == tmp_path / ".library-tool-outputs" / "default-scanner" / "20260218T200500Z"
     )
     assert (result.output / "example.json").exists()
 
@@ -250,3 +253,82 @@ def test_runner_executes_with_explicit_tool_config(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     assert (result.output / "scan.json").exists()
+
+
+@pytest.mark.integration
+def test_runner_executes_without_manifest_with_default_input(tmp_path: Path) -> None:
+    """Runner executes with explicit tool config and no manifest path."""
+    image = "docker.io/library/alpine:3.19"
+    _ensure_docker_and_image(image)
+
+    tool = schema.Tool(
+        id="default-scanner",
+        parser="trivy",
+        image=image,
+        command=[
+            "sh",
+            "-c",
+            "cat {{inputs.trivy}} >/dev/null && printf '{\"ok\":true}' > /outputs/example.json",
+        ],
+        inputs={
+            "trivy": schema.ToolInputs(
+                source="default", destination="/config/trivy.yaml"
+            )
+        },
+        socket=False,
+        outputs="/outputs/",
+    )
+
+    result = run(
+        ToolRunContext(
+            manifest=None,
+            command="scan",
+            image="docker.io/library/alpine:3.19",
+            time=datetime(2026, 2, 18, 20, 15, 0, tzinfo=timezone.utc),
+            tool=tool,
+            output_root=tmp_path,
+        )
+    )
+
+    assert result.exit_code == 0
+    assert (
+        result.output
+        == tmp_path / ".library-tool-outputs" / "default-scanner" / "20260218T201500Z"
+    )
+    assert (result.output / "example.json").exists()
+
+
+def test_runner_rejects_relative_input_without_manifest(tmp_path: Path) -> None:
+    """Runner should fail fast when relative input source has no manifest context."""
+    relative_input = tmp_path / "custom.trivy.yaml"
+    relative_input.write_text("key: value\n", encoding="utf-8")
+
+    tool = schema.Tool(
+        id="default-scanner",
+        parser="trivy",
+        image="docker.io/library/alpine:3.19",
+        command=["trivy", "image", "{{image.reference}}"],
+        inputs={
+            "trivy": schema.ToolInputs(
+                source=relative_input,
+                destination="/config/trivy.yaml",
+            )
+        },
+        socket=False,
+        outputs="/outputs/",
+    )
+
+    # Force a relative source after model validation to exercise runtime guardrail.
+    object.__setattr__(tool.inputs["trivy"], "source", "custom.trivy.yaml")
+
+    with pytest.raises(ValueError, match="requires a manifest"):
+        run(
+            ToolRunContext(
+                manifest=None,
+                command="scan",
+                image="docker.io/library/alpine:3.19",
+                time=datetime(2026, 2, 18, 20, 20, 0, tzinfo=timezone.utc),
+                tool=tool,
+                output_root=tmp_path,
+            )
+        )
