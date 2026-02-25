@@ -6,7 +6,23 @@ Library Tools is a manifest-driven CLI and CI workflow for producing high-qualit
 
 ## `library init`
 
-Creates a manifest from project context and user input, with scientist-first defaults and optional non-interactive operation for CI/bootstrap automation.
+Creates a manifest from user input using a RichForms interactive Pydantic form.
+The command prompts an init-focused form model and then materializes a strict
+runtime `Schema` instance before writing YAML. Internal runtime-only fields are
+excluded from prompting via `json_schema_extra` RichForms metadata.
+`metadata.discovery.created` uses a UTC default factory, and
+`metadata.discovery.revision` plus full `config` defaults are injected by init.
+
+CLI surface:
+
+- `library init [--output|-o PATH]`
+
+Behavior:
+
+- Output defaults to `./.library.manifest.yaml`.
+- If output exists, users get an overwrite confirmation prompt.
+- Parent directories for `--output` are created automatically.
+- Non-interactive init modes are deferred to a later phase.
 
 ## `library lint`
 
@@ -20,13 +36,24 @@ CLI surface:
 
 Builds container images from manifest intent. Supports passthrough args to buildx (`-- <args>`) with guardrails that prevent overriding manifest-owned fields (for example tag/platform/file metadata controls).
 
+CLI surface:
+
+- `library build [--manifest|-m PATH] [-- <buildx-args>]`
+
 ## `library scan`
 
 Runs vulnerability analysis against target images (Trivy backend initially), with profile-controlled thresholds and optional explicit scanner config overrides.
 
 CLI surface:
 
-- `library scan <image> [--manifest|-m PATH] [--verbose|-v]`
+- `library scan [IMAGE] [--manifest|-m PATH] [--verbose|-v]`
+
+Behavior:
+
+- If IMAGE is omitted and a manifest exists, scan derives an image reference
+  from `registry.*` and the first `build.tags` entry.
+- If IMAGE is provided and no manifest exists, scan runs with packaged default
+  scanner configuration.
 
 ## `library refurbish`
 

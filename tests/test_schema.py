@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
 from yaml import safe_load
 
-from library.schema import Schema
+from library.schema import Discovery, Schema
 
 
 def _default_scan_tool() -> dict[str, object]:
@@ -114,6 +115,19 @@ def test_discovery_deprecated_defaults_to_false() -> None:
     model = Schema(**data)
 
     assert model.metadata.discovery.deprecated is False
+
+
+def test_discovery_created_defaults_to_utc_now_when_omitted() -> None:
+    """Discovery created should be generated with a timezone-aware UTC timestamp."""
+    data = _minimal_schema_payload()
+    del data["metadata"]["discovery"]["created"]
+
+    model = Schema(**data)
+    created = model.metadata.discovery.created
+
+    assert isinstance(created, datetime)
+    assert created.tzinfo is not None
+    assert created.utcoffset() == timezone.utc.utcoffset(created)
 
 
 def test_discovery_kind_required() -> None:
@@ -280,3 +294,29 @@ def test_schema_save_writes_materialized_yaml(tmp_path: Path) -> None:
     assert isinstance(saved, dict)
     assert saved["version"] == 1
     assert saved["config"]["policy"] == "default"
+
+
+def test_richforms_exclude_metadata_is_present_on_schema_fields() -> None:
+    """Schema fields should expose richforms exclusion metadata for init prompts."""
+    created_field = Discovery.model_fields["created"]
+    revision_field = Discovery.model_fields["revision"]
+    config_field = Schema.model_fields["config"]
+
+    assert created_field.json_schema_extra == {"richforms": {"exclude": True}}
+    assert revision_field.json_schema_extra == {"richforms": {"exclude": True}}
+    assert config_field.json_schema_extra == {"richforms": {"exclude": True}}
+
+
+def test_model_json_schema_includes_richforms_exclude_metadata() -> None:
+    """Generated JSON Schema should include richforms metadata extensions."""
+    schema_json = Schema.model_json_schema()
+    discovery_fields = schema_json["$defs"]["Discovery"]["properties"]
+    config_field = schema_json["properties"]["config"]
+    config_def = schema_json["$defs"]["Config"]
+
+    assert discovery_fields["created"]["richforms"]["exclude"] is True
+    assert discovery_fields["revision"]["richforms"]["exclude"] is True
+    if "richforms" in config_field:
+        assert config_field["richforms"]["exclude"] is True
+    else:
+        assert config_def["richforms"]["exclude"] is True

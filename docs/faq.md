@@ -40,6 +40,12 @@ The default workflow is:
 - `library push attestations`
 - `library push all`
 
+`library init` behavior:
+
+- Runs an interactive RichForms-based Pydantic form.
+- Writes a complete runtime-ready manifest, including default tool config.
+- Supports `--output` to save to an alternate path.
+
 ## Is this workflow opinionated or configurable?
 
 Both. The workflow is opinionated by default, but policy is configurable.
@@ -69,9 +75,12 @@ Non-repo local directory workflows are planned for a later phase.
 Manifest discovery:
 
 - Canonical filename is `.library.manifest.yaml`.
-- `lint` and `refurbish` require a manifest (discovered from current directory or passed via `--manifest`).
-- `scan` requires a manifest (discovered from current directory or passed via
-  `--manifest`) and an explicit image argument.
+- `lint`, `build`, and `refurbish` require a manifest (discovered from current
+  directory or passed via `--manifest`).
+- `scan` accepts optional IMAGE and optional manifest:
+  - with manifest and no IMAGE, scan derives the image reference from manifest
+    registry + first build tag.
+  - with IMAGE and no manifest, scan runs using built-in default scanner config.
 
 ## How is metadata handled between manifest and Dockerfile?
 

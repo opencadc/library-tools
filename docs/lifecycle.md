@@ -10,6 +10,20 @@ From the perspective of a user, the lifecycle of a container image created using
 - Build source and build intent.
 - Image naming and tagging intent.
 - Discovery metadata intent.
+- Runtime-ready tool configuration defaults.
+
+Initialization behavior:
+
+- `library init` uses an interactive RichForms form over canonical
+  `library/schema.py` models.
+- It writes a fully materialized manifest to
+  `./.library.manifest.yaml` by default.
+- `--output` writes to an alternate file path and creates missing parent
+  directories.
+- If the target file exists, `init` prompts before overwrite.
+- RichForms excludes internal fields from prompting
+  (`config`, `metadata.discovery.created`, `metadata.discovery.revision`), while
+  init materializes those values in the written manifest.
 
 The manifest is the canonical contract for later commands.
 
@@ -35,7 +49,10 @@ Execution behavior:
 
 `library build` executes buildx-compatible image builds from manifest intent.
 
-Advanced users can pass extra buildx arguments via passthrough (`-- <args>`), while the CLI protects manifest-owned options from accidental override. e.g. `library build manifest.yaml --ssh=default` will pass the `--ssh` flag to buildx.
+Advanced users can pass extra buildx arguments via passthrough (`-- <args>`),
+while the CLI protects manifest-owned options from accidental override. For
+example, `library build --manifest manifest.yaml -- --ssh=default` passes the
+`--ssh` flag to buildx.
 
 ## 4) Scan
 
@@ -43,10 +60,11 @@ Advanced users can pass extra buildx arguments via passthrough (`-- <args>`), wh
 
 Execution behavior:
 
-- `scan` requires an explicit target image argument.
-- `scan` requires a manifest. If you omit `--manifest`, the CLI uses
-  `./.library.manifest.yaml`.
-- `scan` validates and uses the manifest file directly with no command-time default fill.
+- `scan` accepts an optional target image argument.
+- If `scan` is invoked without IMAGE and a manifest exists, the CLI derives the
+  image reference from `registry.*` and the first `build.tags` entry.
+- If `scan` is invoked with IMAGE and no manifest exists, the CLI runs with
+  packaged default scanner configuration.
 
 ## 5) Refurbish (Dependency Modernization)
 

@@ -10,17 +10,26 @@ library --help
 
 ## Command Workflow
 
-For `lint`, `scan`, and `refurbish`, `--manifest` defaults to
-`./.library.manifest.yaml`. The file must exist and be readable.
+For `lint`, `build`, `scan`, and `refurbish`, `--manifest` defaults to
+`./.library.manifest.yaml`.
 
 ### `init`
 
 Create a manifest that describes software, build intent, and metadata intent.
+`init` uses a RichForms interactive form over the canonical `Schema` model in
+`library/schema.py`. Internal fields are excluded from prompting with RichForms
+metadata (`config`, `metadata.discovery.created`, and
+`metadata.discovery.revision`). It writes a runtime-ready manifest that includes
+fully materialized tool defaults.
 
 ```bash
 library init
 library init --output manifests/my-image.yaml
 ```
+
+`--output` defaults to `./.library.manifest.yaml`. If the output file exists,
+the CLI prompts before overwrite. If you decline overwrite, the command exits
+without changing the file.
 
 ### `lint`
 
@@ -36,15 +45,22 @@ library lint --manifest manifests/my-image.yaml
 Build a container image from manifest intent. Supports buildx passthrough args via `--`.
 
 ```bash
-library build manifests/my-image.yaml
-library build manifests/my-image.yaml -- --progress=plain
+library build
+library build --manifest manifests/my-image.yaml
+library build --manifest manifests/my-image.yaml -- --progress=plain
 ```
 
 ### `scan`
 
 Scan a container image for vulnerabilities.
+If you omit IMAGE and a manifest exists, `scan` derives the image reference from
+`registry.host`, `registry.project`, `registry.image`, and the first
+`build.tags` entry. If IMAGE is provided and no manifest is available, `scan`
+uses the built-in default scanner configuration.
 
 ```bash
+library scan images.canfar.net/library/my-image:1.0
+library scan --manifest manifests/my-image.yaml
 library scan images.canfar.net/library/my-image:1.0 --manifest manifests/my-image.yaml
 ```
 

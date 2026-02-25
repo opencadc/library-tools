@@ -45,10 +45,12 @@ That Dockerfile is mounted into the container as `/inputs/Dockerfile`.
 Runtime API:
 
 - `ToolRunContext`
-  - `manifest: Path`
+  - `manifest: Path | None`
   - `command: str`
   - `image: str`
   - `time: datetime`
+  - `tool: Tool | None`
+  - `output_root: Path | None`
 - `ToolRunResult`
   - `tool: str`
   - `output: DirectoryPath`
@@ -139,7 +141,7 @@ Each `tools[].inputs.<key>` entry contains:
 1. Every tool runs in Docker.
 2. Container outputs path is fixed: `/outputs/`.
 3. Host run workspace is deterministic:
-   - `./outputs/{tool-id}/{DATETIME}/`
+   - `./.library-tool-outputs/{tool-id}/{DATETIME}/`
 4. Host run workspace is always mounted into container as `/outputs`.
 5. All tool outputs are written to `/outputs/*` inside the container.
 6. `inputs` are resolved and mounted at `destination`.
@@ -173,20 +175,23 @@ Examples:
 ## Complete Lifecycle
 
 1. Caller creates `ToolRunContext` and provides:
-   - `manifest`: manifest path
+   - `manifest`: manifest path (optional when `tool` is provided)
    - `command`: logical command key (for example `scan`)
    - `image`: runtime image reference token value
    - `time`: run timestamp
+   - optional `tool`: explicit tool config for no-manifest execution
+   - optional `output_root`: host root override for tool artifacts
 2. Runtime manifest lifecycle loads `schema.Schema` from YAML/dict:
    - `library/schema.py` is the canonical interoperability contract, including
      invariant validation and YAML load/save helpers.
    - recommended defaults are implemented in `library/tools/defaults.py`.
-   - runtime commands require a fully materialized manifest config.
+   - manifest-backed runtime commands require a fully materialized manifest
+     config.
 3. `library.tools.runner.run(context)` resolves:
    - `cli[command]` -> `tool.id`
    - `tool.id` -> `tools[]` entry
 4. Runner computes run directory:
-   - `./outputs/{tool-id}/{DATETIME}/`
+   - `./.library-tool-outputs/{tool-id}/{DATETIME}/`
 5. Runner creates that run directory.
 6. Runner resolves each input source:
    - `default` -> packaged config in the library
@@ -196,7 +201,8 @@ Examples:
 9. Runner mounts Docker socket if `socket=true`.
 10. Runner renders command tokens and runs the tool container.
 11. Tool writes one or more JSON files into `/outputs/`.
-12. JSON artifacts are available on host under `./outputs/{tool-id}/{DATETIME}/`.
+12. JSON artifacts are available on host under
+    `./.library-tool-outputs/{tool-id}/{DATETIME}/`.
 13. Runner returns `ToolRunResult` with tool id, output directory, exit code, stdout, and stderr.
 
 ## Runnable Example

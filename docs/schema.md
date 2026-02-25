@@ -84,19 +84,19 @@ Discovery metadata mapped to OCI labels/annotations.
 
 | Property | Type | Required | Possible values | Default | Description | Examples |
 | -------- | ---- | -------- | --------------- | ------- | ----------- | -------- |
-| title | `string` | ✅ | string |  | Human-readable title of the image. | ```Baseband Analysis``` |
-| description | `string` | ✅ | Length: `1 <= string <= 255` |  | Human-readable description of the software packaged in the image. | ```Baseband analysis tools for radio astronomy.``` |
-| source | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to get source code for building the image. | ```https://github.com/example/repo``` |
+| title | `string` | ✅ | string |  | Human-readable title of the image. | ```AstroML``` |
+| description | `string` | ✅ | Length: `1 <= string <= 255` |  | Human-readable description of the software packaged in the image. | ```Common Astronomy and Machine Learning tools.``` |
+| source | `string` | ✅ | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | URL to get source code for building the image. | ```https://github.com/example/astroml``` |
 | version | `string` | ✅ | string |  | Version of the packaged software. | ```v1.2.3``` |
-| created | `string` | ✅ | Format: [`date-time`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | Datetime when metadata was processed. | ```2026-02-05T12:00:00Z``` |
 | authors | `array` | ✅ | [Author](#author) |  | Details of the people or organization responsible for the image | ```{'email': 'john.doe@example.com', 'name': 'John Doe'}``` |
 | licenses | `string` | ✅ | string |  | License(s) for software, as an SPDX License Expression. | ```AGPL-3.0```, ```AGPL-3.0-only```, ```MIT OR Apache-2.0``` |
 | keywords | `array` | ✅ | string |  | Keywords used to support software discovery and search. | ```polarization```, ```radio-astronomy```, ```calibration``` |
 | kind | `array` | ✅ | `notebook` `headless` `carta` `firefly` `contributed` `desktop` |  | Classification of the software in the image. | ```['headless']```, ```['notebook', 'headless']``` |
 | tools | `array` | ✅ | string |  | Scientific Software packages included in the image. | ```python```, ```jupyterlab```, ```astropy```, ```pyuvdata```, ```wsclean``` |
-| url | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to find more information on the image. | ```https://example.com/baseband-analysis``` |
-| documentation | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to get documentation on the image. | ```https://example.com/baseband-analysis/docs``` |
+| url | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to find more information on the image. | ```https://astroml.org``` |
+| documentation | `string` or `null` |  | Format: [`uri`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) | `null` | URL to get documentation on the image. | ```https://github.io/example/astroml``` |
 | revision | `string` |  | string | `"unknown"` | Automatically computed from git when building from source. | ```1234567890123456789012345678901234567890``` |
+| created | `string` |  | Format: [`date-time`](https://json-schema.org/understanding-json-schema/reference/string#built-in-formats) |  | Datetime when metadata was processed. | ```2026-02-05T12:00:00Z``` |
 | domain | `array` |  | string | `["astronomy"]` | Scientific domains supported by this image. | ```['astronomy']```, ```['astronomy', 'scientific-computing']``` |
 | deprecated | `boolean` |  | boolean | `false` | Whether this image is deprecated and should no longer be used. | ```False```, ```True``` |
 
