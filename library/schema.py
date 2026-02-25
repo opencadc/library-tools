@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from copy import deepcopy
 import re
@@ -26,6 +26,11 @@ from yaml import safe_load
 from library import DEFAULT_LIBRARY_MANIFEST_FILENAME
 
 TOOL_TOKEN_PATTERN = re.compile(r"{{\s*([a-zA-Z0-9_.-]+)\s*}}")
+
+
+def _utc_now() -> datetime:
+    """Return timezone-aware current UTC timestamp."""
+    return datetime.now(timezone.utc)
 
 
 def _normalize_relative_input_sources(
@@ -200,13 +205,13 @@ class Discovery(BaseModel):
         ...,
         title="Title",
         description="Human-readable title of the image.",
-        examples=["Baseband Analysis"],
+        examples=["AstroML"],
     )
     description: str = Field(
         ...,
         title="Description",
         description="Human-readable description of the software packaged in the image.",
-        examples=["Baseband analysis tools for radio astronomy."],
+        examples=["Common Astronomy and Machine Learning tools."],
         min_length=1,
         max_length=255,
     )
@@ -214,19 +219,19 @@ class Discovery(BaseModel):
         ...,
         title="Source",
         description="URL to get source code for building the image.",
-        examples=["https://github.com/example/repo"],
+        examples=["https://github.com/example/astroml"],
     )
     url: AnyUrl | None = Field(
         None,
         title="URL",
         description="URL to find more information on the image.",
-        examples=["https://example.com/baseband-analysis"],
+        examples=["https://astroml.org"],
     )
     documentation: AnyUrl | None = Field(
         None,
         title="Documentation",
         description="URL to get documentation on the image.",
-        examples=["https://example.com/baseband-analysis/docs"],
+        examples=["https://github.io/example/astroml"],
     )
     version: str = Field(
         ...,
@@ -239,12 +244,15 @@ class Discovery(BaseModel):
         title="Source Control Revision Checksum",
         description="Automatically computed from git when building from source.",
         examples=["1234567890123456789012345678901234567890"],
+        json_schema_extra={"richforms": {"exclude": True}},
     )
     created: datetime = Field(
-        ...,
+        default_factory=_utc_now,
         title="Created Timestamp",
         description="Datetime when metadata was processed.",
         examples=["2026-02-05T12:00:00Z"],
+        # Excludes from richforms cli init flow; auto-populated at build time.
+        json_schema_extra={"richforms": {"exclude": True}},
     )
     authors: list[Author] = Field(
         ...,
@@ -447,7 +455,11 @@ class Config(BaseModel):
         examples=[{"scan": "default-scanner", "lint": "default-linter"}],
     )
 
-    model_config = ConfigDict(extra="forbid", validate_assignment=True)
+    model_config = ConfigDict(
+        extra="forbid",
+        validate_assignment=True,
+        json_schema_extra={"richforms": {"exclude": True}},
+    )
 
     @model_validator(mode="after")
     def validate_catalog(self) -> "Config":
@@ -474,11 +486,20 @@ class Config(BaseModel):
 class Schema(BaseModel):
     """Canonical Library manifest schema contract."""
 
-    version: Literal[1] = Field(1, description="Library manifest schema version.")
+    version: Literal[1] = Field(
+        1,
+        description="Library manifest schema version.",
+        json_schema_extra={"richforms": {"exclude": True}},
+    )
     registry: Registry = Field(..., title="Registry", description="Image registry.")
     build: Build = Field(..., title="Build Info", description="Image build info.")
     metadata: Metadata = Field(..., title="Metadata", description="Image metadata.")
-    config: Config = Field(..., title="Config", description="Tool configuration.")
+    config: Config = Field(
+        ...,
+        title="Config",
+        description="Tool configuration.",
+        json_schema_extra={"richforms": {"exclude": True}},
+    )
 
     model_config = ConfigDict(
         extra="forbid",

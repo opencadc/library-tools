@@ -245,6 +245,9 @@
         "tools",
         "cli"
       ],
+      "richforms": {
+        "exclude": true
+      },
       "title": "Config",
       "type": "object"
     },
@@ -255,7 +258,7 @@
         "title": {
           "description": "Human-readable title of the image.",
           "examples": [
-            "Baseband Analysis"
+            "AstroML"
           ],
           "title": "Title",
           "type": "string"
@@ -263,7 +266,7 @@
         "description": {
           "description": "Human-readable description of the software packaged in the image.",
           "examples": [
-            "Baseband analysis tools for radio astronomy."
+            "Common Astronomy and Machine Learning tools."
           ],
           "maxLength": 255,
           "minLength": 1,
@@ -273,7 +276,7 @@
         "source": {
           "description": "URL to get source code for building the image.",
           "examples": [
-            "https://github.com/example/repo"
+            "https://github.com/example/astroml"
           ],
           "format": "uri",
           "minLength": 1,
@@ -294,7 +297,7 @@
           "default": null,
           "description": "URL to find more information on the image.",
           "examples": [
-            "https://example.com/baseband-analysis"
+            "https://astroml.org"
           ],
           "title": "URL"
         },
@@ -312,7 +315,7 @@
           "default": null,
           "description": "URL to get documentation on the image.",
           "examples": [
-            "https://example.com/baseband-analysis/docs"
+            "https://github.io/example/astroml"
           ],
           "title": "Documentation"
         },
@@ -330,6 +333,9 @@
           "examples": [
             "1234567890123456789012345678901234567890"
           ],
+          "richforms": {
+            "exclude": true
+          },
           "title": "Source Control Revision Checksum",
           "type": "string"
         },
@@ -339,6 +345,9 @@
             "2026-02-05T12:00:00Z"
           ],
           "format": "date-time",
+          "richforms": {
+            "exclude": true
+          },
           "title": "Created Timestamp",
           "type": "string"
         },
@@ -457,7 +466,6 @@
         "description",
         "source",
         "version",
-        "created",
         "authors",
         "licenses",
         "keywords",
@@ -679,6 +687,9 @@
       "const": 1,
       "default": 1,
       "description": "Library manifest schema version.",
+      "richforms": {
+        "exclude": true
+      },
       "title": "Version",
       "type": "integer"
     },
