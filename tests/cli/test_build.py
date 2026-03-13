@@ -39,7 +39,9 @@ def test_run_build_expands_plain_manifest_tags(monkeypatch) -> None:
             return cmd
 
     manifest = SimpleNamespace(
-        registry=SimpleNamespace(host="images.canfar.net", project="cadc", image="library"),
+        registry=SimpleNamespace(
+            host="images.canfar.net", project="cadc", image="library"
+        ),
         build=_Build(),
     )
 

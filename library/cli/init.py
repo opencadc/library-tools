@@ -62,9 +62,9 @@ def run_init(output: Path) -> None:
 
     try:
         form = fill(
-        InitForm,
-        config=FormConfig(),
-    )
+            InitForm,
+            config=FormConfig(),
+        )
     except KeyboardInterrupt as exc:
         console.print("[yellow]⚠️ Init canceled.[/yellow]")
         raise typer.Exit(code=130) from exc

@@ -117,6 +117,7 @@ def test_library_init_accept_overwrite_replaces_existing_file(
 
 def test_library_init_handles_keyboard_interrupt(cli_runner, monkeypatch) -> None:
     """Keyboard interrupt should exit with 130."""
+
     def raise_interrupt() -> cli_init.InitForm:
         raise KeyboardInterrupt
 
